@@ -1,0 +1,13 @@
+idle maxT=37
+    events per second:  3339.77
+Avr:     20122   738   2861  21099  |     199113   671   2589  17335
+Tot:             704   2725  19217
+after cpu maxT=68
+    Device ID:      0x6050002
+    Device Name:    Turnip Adreno (TM) 650
+    Device UUID:    d34546529c3785e71c3a6f7eab947ebf
+                                   vkmark Score: 10565
+after vk maxT=65
+    GL_RENDERER:    FD650
+                                  glmark2 Score: 402 
+after gl maxT=37

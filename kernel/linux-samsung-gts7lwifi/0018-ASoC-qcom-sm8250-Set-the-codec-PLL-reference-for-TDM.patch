@@ -1,0 +1,42 @@
+From 968b2f6bfd1721530ac73dacc6e07ae1c9edc4fa Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ege=20Co=C5=9Fkun?= <randward@proton.me>
+Date: Sun, 13 Sep 2026 21:05:11 +0300
+Subject: [PATCH 18/33] ASoC: qcom: sm8250: Set the codec PLL reference for TDM
+ links
+
+The TDM links only set the DAI system clock of the codecs. CS35L41 takes
+its PLL reference frequency from the component system clock, so its PLL
+never locks and power up times out. Set the component system clock too.
+
+Assisted-by: Claude:claude-opus-5
+---
+ sound/soc/qcom/sm8250.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/sound/soc/qcom/sm8250.c b/sound/soc/qcom/sm8250.c
+index 138f09bf8..040ad42a2 100644
+--- a/sound/soc/qcom/sm8250.c
++++ b/sound/soc/qcom/sm8250.c
+@@ -176,6 +176,9 @@ static int sm8250_snd_startup(struct snd_pcm_substream *substream)
+ 		for_each_rtd_codec_dais(rtd, j, codec_dai) {
+ 			ret = snd_soc_dai_set_fmt(codec_dai, codec_dai_fmt);
+ 			snd_soc_dai_set_sysclk(codec_dai, 0, TDM_BCLK_RATE, SNDRV_PCM_STREAM_PLAYBACK);
++			/* The PLL reference of codecs like CS35L41 is set on the component */
++			snd_soc_component_set_sysclk(codec_dai->component, 0, 0, TDM_BCLK_RATE,
++						     SND_SOC_CLOCK_IN);
+ 			if (ret < 0) {
+ 				dev_err(rtd->dev, "TDM fmt err:%d\n", ret);
+ 				return ret;
+@@ -191,6 +194,9 @@ static int sm8250_snd_startup(struct snd_pcm_substream *substream)
+ 		for_each_rtd_codec_dais(rtd, j, codec_dai) {
+ 			ret = snd_soc_dai_set_fmt(codec_dai, codec_dai_fmt);
+ 			snd_soc_dai_set_sysclk(codec_dai, 0, TDM_BCLK_RATE, SNDRV_PCM_STREAM_PLAYBACK);
++			/* The PLL reference of codecs like CS35L41 is set on the component */
++			snd_soc_component_set_sysclk(codec_dai->component, 0, 0, TDM_BCLK_RATE,
++						     SND_SOC_CLOCK_IN);
+ 			if (ret < 0) {
+ 				dev_err(rtd->dev, "TDM fmt err:%d\n", ret);
+ 				return ret;
+-- 
+2.47.3
+

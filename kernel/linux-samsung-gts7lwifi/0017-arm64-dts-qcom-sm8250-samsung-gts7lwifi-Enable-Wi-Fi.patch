@@ -1,0 +1,227 @@
+From d44acc36f2c27201ba3fb722fba893874068ce6e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ege=20Co=C5=9Fkun?= <randward@proton.me>
+Date: Sun, 13 Sep 2026 08:11:40 +0300
+Subject: [PATCH 17/33] arm64: dts: qcom: sm8250-samsung-gts7lwifi: Enable
+ Wi-Fi and Bluetooth
+
+Describe the QCA6390 with its power management unit, enable PCIe0 for
+the WLAN function and UART6 for Bluetooth. The enable GPIOs and supplies
+come from the vendor devicetree.
+
+Assisted-by: Claude:claude-opus-5
+---
+ .../dts/qcom/sm8250-samsung-gts7lwifi.dts     | 156 ++++++++++++++++++
+ 1 file changed, 156 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts b/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+index ee5e1fc35..d5f835949 100644
+--- a/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
++++ b/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+@@ -36,6 +36,10 @@ / {
+ 	compatible = "samsung,gts7lwifi", "qcom,sm8250";
+ 	chassis-type = "tablet";
+ 
++	aliases {
++		serial0 = &uart6;
++	};
++
+ 	battery: battery {
+ 		compatible = "simple-battery";
+ 		constant-charge-current-max-microamp = <2100000>;
+@@ -93,6 +97,68 @@ memory@80000000 {
+ 		      <0x0 0xc0000000 0x1 0x40000000>;
+ 	};
+ 
++	qca6390-pmu {
++		compatible = "qcom,qca6390-pmu";
++
++		pinctrl-0 = <&bt_en_default>, <&wlan_en_default>;
++		pinctrl-names = "default";
++
++		vddaon-supply = <&vreg_s6a_0p95>;
++		vddpmu-supply = <&vreg_s6a_0p95>;
++		vddrfa0p95-supply = <&vreg_s6a_0p95>;
++		vddrfa1p3-supply = <&vreg_s8c_1p35>;
++		vddrfa1p9-supply = <&vreg_s5a_1p9>;
++		vddpcie1p3-supply = <&vreg_s8c_1p35>;
++		vddpcie1p9-supply = <&vreg_s5a_1p9>;
++		vddio-supply = <&vreg_s4a_1p8>;
++
++		wlan-enable-gpios = <&tlmm 90 GPIO_ACTIVE_HIGH>;
++		bt-enable-gpios = <&tlmm 76 GPIO_ACTIVE_HIGH>;
++		swctrl-gpios = <&tlmm 124 GPIO_ACTIVE_HIGH>;
++
++		regulators {
++			vreg_pmu_rfa_cmn: ldo0 {
++				regulator-name = "vreg_pmu_rfa_cmn";
++			};
++
++			vreg_pmu_aon_0p59: ldo1 {
++				regulator-name = "vreg_pmu_aon_0p59";
++			};
++
++			vreg_pmu_wlcx_0p8: ldo2 {
++				regulator-name = "vreg_pmu_wlcx_0p8";
++			};
++
++			vreg_pmu_wlmx_0p85: ldo3 {
++				regulator-name = "vreg_pmu_wlmx_0p85";
++			};
++
++			vreg_pmu_btcmx_0p85: ldo4 {
++				regulator-name = "vreg_pmu_btcmx_0p85";
++			};
++
++			vreg_pmu_rfa_0p8: ldo5 {
++				regulator-name = "vreg_pmu_rfa_0p8";
++			};
++
++			vreg_pmu_rfa_1p2: ldo6 {
++				regulator-name = "vreg_pmu_rfa_1p2";
++			};
++
++			vreg_pmu_rfa_1p7: ldo7 {
++				regulator-name = "vreg_pmu_rfa_1p7";
++			};
++
++			vreg_pmu_pcie_0p9: ldo8 {
++				regulator-name = "vreg_pmu_pcie_0p9";
++			};
++
++			vreg_pmu_pcie_1p8: ldo9 {
++				regulator-name = "vreg_pmu_pcie_1p8";
++			};
++		};
++	};
++
+ 	lcd_buck: regulator-lcd-buck {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "lcd_buck";
+@@ -280,6 +346,20 @@ vreg_s4a_1p8: smps4 {
+ 			regulator-always-on;
+ 		};
+ 
++		vreg_s5a_1p9: smps5 {
++			regulator-name = "vreg_s5a_1p9";
++			regulator-min-microvolt = <1900000>;
++			regulator-max-microvolt = <2040000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_s6a_0p95: smps6 {
++			regulator-name = "vreg_s6a_0p95";
++			regulator-min-microvolt = <950000>;
++			regulator-max-microvolt = <1128000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
+ 		vreg_l2a_3p1: ldo2 {
+ 			regulator-name = "vreg_l2a_3p1";
+ 			regulator-min-microvolt = <3072000>;
+@@ -335,6 +415,22 @@ regulators-1 {
+ 		compatible = "qcom,pm8150l-rpmh-regulators";
+ 		qcom,pmic-id = "c";
+ 
++		vreg_s8c_1p35: smps8 {
++			regulator-name = "vreg_s8c_1p35";
++			regulator-min-microvolt = <1350000>;
++			regulator-max-microvolt = <1400000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		/* WLAN antenna switch */
++		vreg_l5c_1p8: ldo5 {
++			regulator-name = "vreg_l5c_1p8";
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++			regulator-always-on;
++		};
++
+ 		vreg_l6c_2p9: ldo6 {
+ 			regulator-name = "vreg_l6c_2p9";
+ 			regulator-min-microvolt = <1800000>;
+@@ -502,6 +598,34 @@ &mdss_dsi1_phy {
+ 	status = "okay";
+ };
+ 
++&pcie0 {
++	status = "okay";
++};
++
++&pcie0_phy {
++	vdda-phy-supply = <&vreg_l5a_0p88>;
++	vdda-pll-supply = <&vreg_l9a_1p2>;
++
++	status = "okay";
++};
++
++&pcieport0 {
++	wifi@0 {
++		compatible = "pci17cb,1101";
++		reg = <0x10000 0x0 0x0 0x0 0x0>;
++
++		vddrfacmn-supply = <&vreg_pmu_rfa_cmn>;
++		vddaon-supply = <&vreg_pmu_aon_0p59>;
++		vddwlcx-supply = <&vreg_pmu_wlcx_0p8>;
++		vddwlmx-supply = <&vreg_pmu_wlmx_0p85>;
++		vddrfa0p8-supply = <&vreg_pmu_rfa_0p8>;
++		vddrfa1p2-supply = <&vreg_pmu_rfa_1p2>;
++		vddrfa1p7-supply = <&vreg_pmu_rfa_1p7>;
++		vddpcie0p9-supply = <&vreg_pmu_pcie_0p9>;
++		vddpcie1p8-supply = <&vreg_pmu_pcie_1p8>;
++	};
++};
++
+ &pm8150l_gpios {
+ 	chg_int_default: chg-int-default-state {
+ 		pins = "gpio11";
+@@ -554,6 +678,13 @@ &sdhc_2 {
+ &tlmm {
+ 	gpio-reserved-ranges = <20 4>, <40 4>;
+ 
++	bt_en_default: bt-en-default-state {
++		pins = "gpio76";
++		function = "gpio";
++		drive-strength = <16>;
++		bias-disable;
++	};
++
+ 	sdc2_default_state: sdc2-default-state {
+ 		clk-pins {
+ 			pins = "sdc2_clk";
+@@ -608,6 +739,31 @@ ts_int_default: ts-int-default-state {
+ 		drive-strength = <2>;
+ 		bias-disable;
+ 	};
++
++	wlan_en_default: wlan-en-default-state {
++		pins = "gpio90";
++		function = "gpio";
++		drive-strength = <16>;
++		bias-disable;
++	};
++};
++
++&uart6 {
++	status = "okay";
++
++	bluetooth {
++		compatible = "qcom,qca6390-bt";
++
++		/* Filled in by the bootloader */
++		local-bd-address = [00 00 00 00 00 00];
++
++		vddrfacmn-supply = <&vreg_pmu_rfa_cmn>;
++		vddaon-supply = <&vreg_pmu_aon_0p59>;
++		vddbtcmx-supply = <&vreg_pmu_btcmx_0p85>;
++		vddrfa0p8-supply = <&vreg_pmu_rfa_0p8>;
++		vddrfa1p2-supply = <&vreg_pmu_rfa_1p2>;
++		vddrfa1p7-supply = <&vreg_pmu_rfa_1p7>;
++	};
+ };
+ 
+ &ufs_mem_hc {
+-- 
+2.47.3
+

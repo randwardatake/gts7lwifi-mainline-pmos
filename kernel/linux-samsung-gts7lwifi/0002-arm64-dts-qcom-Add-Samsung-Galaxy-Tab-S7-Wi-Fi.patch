@@ -1,0 +1,311 @@
+From 87bbf89c4d04d087e729e57c746e51f91bebefed Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ege=20Co=C5=9Fkun?= <randward@proton.me>
+Date: Sun, 13 Sep 2026 02:01:46 +0300
+Subject: [PATCH 02/33] arm64: dts: qcom: Add Samsung Galaxy Tab S7 Wi-Fi
+
+Add an initial device tree for the Samsung Galaxy Tab S7 Wi-Fi (SM-T870).
+
+Supported features:
+- Framebuffer console (display left on by the bootloader)
+- USB 2.0 in peripheral mode
+
+The reserved memory layout is taken from the device tree passed by the
+stock bootloader, which differs from sm8250.dtsi.
+
+Assisted-by: Claude:claude-opus-5
+---
+ arch/arm64/boot/dts/qcom/Makefile             |   1 +
+ .../dts/qcom/sm8250-samsung-gts7lwifi.dts     | 269 ++++++++++++++++++
+ 2 files changed, 270 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+
+diff --git a/arch/arm64/boot/dts/qcom/Makefile b/arch/arm64/boot/dts/qcom/Makefile
+index e2aff0b3b..c6580eea3 100644
+--- a/arch/arm64/boot/dts/qcom/Makefile
++++ b/arch/arm64/boot/dts/qcom/Makefile
+@@ -359,6 +359,7 @@ dtb-$(CONFIG_ARCH_QCOM) += sm8250-lenovo-q706f.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sm8250-mtp.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sm8250-oneplus-instantnoodlep.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sm8250-oneplus-kebab.dtb
++dtb-$(CONFIG_ARCH_QCOM)	+= sm8250-samsung-gts7lwifi.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sm8250-samsung-r8q.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sm8250-samsung-x1q.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sm8250-sony-xperia-edo-pdx203.dtb
+diff --git a/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts b/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+new file mode 100644
+index 000000000..9f78aa186
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+@@ -0,0 +1,269 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Copyright (c) 2026, Ege Coşkun <randward@proton.me>
++ */
++
++/dts-v1/;
++
++#include <dt-bindings/regulator/qcom,rpmh-regulator.h>
++#include "sm8250.dtsi"
++
++/* The reserved memory layout differs from sm8250.dtsi */
++/delete-node/ &adsp_mem;
++/delete-node/ &camera_mem;
++/delete-node/ &cdsp_mem;
++/delete-node/ &cdsp_secure_heap;
++/delete-node/ &cmd_db;
++/delete-node/ &cvp_mem;
++/delete-node/ &gpu_mem;
++/delete-node/ &hyp_mem;
++/delete-node/ &ipa_fw_mem;
++/delete-node/ &ipa_gsi_mem;
++/delete-node/ &npu_mem;
++/delete-node/ &removed_mem;
++/delete-node/ &slpi_mem;
++/delete-node/ &smem_mem;
++/delete-node/ &spss_mem;
++/delete-node/ &video_mem;
++/delete-node/ &wlan_mem;
++/delete-node/ &xbl_aop_mem;
++
++/ {
++	model = "Samsung Galaxy Tab S7 Wi-Fi";
++	compatible = "samsung,gts7lwifi", "qcom,sm8250";
++	chassis-type = "tablet";
++
++	chosen {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		framebuffer: framebuffer@9c000000 {
++			compatible = "simple-framebuffer";
++			reg = <0x0 0x9c000000 0x0 0x2300000>;
++			width = <1600>;
++			height = <2560>;
++			stride = <(1600 * 4)>;
++			format = "a8r8g8b8";
++			clocks = <&dispcc DISP_CC_MDSS_AHB_CLK>,
++				 <&gcc GCC_DISP_HF_AXI_CLK>,
++				 <&gcc GCC_DISP_SF_AXI_CLK>,
++				 <&dispcc DISP_CC_MDSS_VSYNC_CLK>,
++				 <&dispcc DISP_CC_MDSS_MDP_CLK>,
++				 <&dispcc DISP_CC_MDSS_BYTE0_CLK>,
++				 <&dispcc DISP_CC_MDSS_BYTE0_INTF_CLK>,
++				 <&dispcc DISP_CC_MDSS_PCLK0_CLK>,
++				 <&dispcc DISP_CC_MDSS_ESC0_CLK>;
++			power-domains = <&dispcc MDSS_GDSC>;
++		};
++	};
++
++	memory@80000000 {
++		device_type = "memory";
++		reg = <0x0 0x80000000 0x0 0x3cc00000>,
++		      <0x0 0xc0000000 0x1 0x40000000>;
++	};
++
++	reserved-memory {
++		hyp_mem: memory@80000000 {
++			reg = <0x0 0x80000000 0x0 0x600000>;
++			no-map;
++		};
++
++		xbl_aop_mem: memory@80603000 {
++			reg = <0x0 0x80603000 0x0 0x25d000>;
++			no-map;
++		};
++
++		cmd_db: memory@80860000 {
++			compatible = "qcom,cmd-db";
++			reg = <0x0 0x80860000 0x0 0x20000>;
++			no-map;
++		};
++
++		memory@80880000 {
++			reg = <0x0 0x80880000 0x0 0x14000>;
++			no-map;
++		};
++
++		smem_mem: memory@80900000 {
++			reg = <0x0 0x80900000 0x0 0x200000>;
++			no-map;
++		};
++
++		removed_mem: memory@80b00000 {
++			reg = <0x0 0x80b00000 0x0 0x6300000>;
++			no-map;
++		};
++
++		slpi_mem: memory@89200000 {
++			reg = <0x0 0x89200000 0x0 0x1500000>;
++			no-map;
++		};
++
++		adsp_mem: memory@8a700000 {
++			reg = <0x0 0x8a700000 0x0 0x2c00000>;
++			no-map;
++		};
++
++		spss_mem: memory@8d300000 {
++			reg = <0x0 0x8d300000 0x0 0x100000>;
++			no-map;
++		};
++
++		npu_mem: memory@8d400000 {
++			reg = <0x0 0x8d400000 0x0 0x500000>;
++			no-map;
++		};
++
++		video_mem: memory@8d900000 {
++			reg = <0x0 0x8d900000 0x0 0x500000>;
++			no-map;
++		};
++
++		cvp_mem: memory@8de00000 {
++			reg = <0x0 0x8de00000 0x0 0x500000>;
++			no-map;
++		};
++
++		cdsp_mem: memory@8e300000 {
++			reg = <0x0 0x8e300000 0x0 0x1a00000>;
++			no-map;
++		};
++
++		camera_mem: memory@8fd00000 {
++			reg = <0x0 0x8fd00000 0x0 0x500000>;
++			no-map;
++		};
++
++		wlan_mem: memory@90200000 {
++			reg = <0x0 0x90200000 0x0 0x100000>;
++			no-map;
++		};
++
++		ipa_fw_mem: memory@90300000 {
++			reg = <0x0 0x90300000 0x0 0x10000>;
++			no-map;
++		};
++
++		ipa_gsi_mem: memory@90310000 {
++			reg = <0x0 0x90310000 0x0 0xa000>;
++			no-map;
++		};
++
++		gpu_mem: memory@9031a000 {
++			reg = <0x0 0x9031a000 0x0 0x2000>;
++			no-map;
++		};
++
++		cdsp_secure_heap: memory@90400000 {
++			reg = <0x0 0x90400000 0x0 0x600000>;
++			no-map;
++		};
++
++		cont_splash_mem: memory@9c000000 {
++			reg = <0x0 0x9c000000 0x0 0x2300000>;
++			no-map;
++		};
++
++		memory@9e300000 {
++			reg = <0x0 0x9e300000 0x0 0x100000>;
++			no-map;
++		};
++
++		memory@9f000000 {
++			reg = <0x0 0x9f000000 0x0 0x800000>;
++			no-map;
++		};
++
++		memory@9f800000 {
++			reg = <0x0 0x9f800000 0x0 0x200000>;
++			no-map;
++		};
++
++		ramoops@9fa00000 {
++			compatible = "ramoops";
++			reg = <0x0 0x9fa00000 0x0 0x100000>;
++			record-size = <0x4000>;
++			console-size = <0x40000>;
++			ftrace-size = <0x40000>;
++			pmsg-size = <0x40000>;
++			no-map;
++		};
++
++		memory@a0001000 {
++			reg = <0x0 0xa0001000 0x0 0x1000>;
++			no-map;
++		};
++
++		memory@b0100000 {
++			reg = <0x0 0xb0100000 0x0 0x100000>;
++			no-map;
++		};
++
++		memory@b0400000 {
++			reg = <0x0 0xb0400000 0x0 0x1400000>;
++			no-map;
++		};
++
++		memory@100000000 {
++			reg = <0x1 0x00000000 0x0 0xad00000>;
++		};
++	};
++};
++
++&apps_rsc {
++	regulators-0 {
++		compatible = "qcom,pm8150-rpmh-regulators";
++		qcom,pmic-id = "a";
++
++		vreg_l2a_3p1: ldo2 {
++			regulator-name = "vreg_l2a_3p1";
++			regulator-min-microvolt = <3072000>;
++			regulator-max-microvolt = <3072000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		/* Also supplies the DSI PHY used by the framebuffer */
++		vreg_l5a_0p88: ldo5 {
++			regulator-name = "vreg_l5a_0p88";
++			regulator-min-microvolt = <880000>;
++			regulator-max-microvolt = <880000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++			regulator-always-on;
++		};
++
++		vreg_l12a_1p8: ldo12 {
++			regulator-name = "vreg_l12a_1p8";
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++		};
++	};
++};
++
++&tlmm {
++	gpio-reserved-ranges = <20 4>, <40 4>;
++};
++
++&usb_1 {
++	/* USB 2.0 only */
++	qcom,select-utmi-as-pipe-clk;
++
++	status = "okay";
++};
++
++&usb_1_dwc3 {
++	dr_mode = "peripheral";
++	maximum-speed = "high-speed";
++	phys = <&usb_1_hsphy>;
++	phy-names = "usb2-phy";
++};
++
++&usb_1_hsphy {
++	vdda-pll-supply = <&vreg_l5a_0p88>;
++	vdda18-supply = <&vreg_l12a_1p8>;
++	vdda33-supply = <&vreg_l2a_3p1>;
++
++	status = "okay";
++};
+-- 
+2.47.3
+

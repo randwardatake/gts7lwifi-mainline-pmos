@@ -1,0 +1,11 @@
+/* GPU OC v2 — 700 MHz at NOM_L1 (same voltage as stock 670) + ACD.
+ * ACD value 0x802b5ffd from downstream kona-v2-gpu.dtsi (a650).
+ * Append to sm8250-samsung-gts7lwifi.dts. Rebuild dtb, repack, flash sda22. */
+&gpu_opp_table {
+	opp-700000000 {
+		opp-hz = /bits/ 64 <700000000>;
+		opp-level = <RPMH_REGULATOR_LEVEL_NOM_L1>;
+		opp-supported-hw = <0xff>;
+		qcom,opp-acd-level = <0x802b5ffd>;
+	};
+};

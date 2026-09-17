@@ -1,0 +1,106 @@
+From 6088554acebefc6768a8544ae9c3662af9a9604b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ege=20Co=C5=9Fkun?= <randward@proton.me>
+Date: Sun, 13 Sep 2026 04:02:51 +0300
+Subject: [PATCH 04/33] arm64: dts: qcom: sm8250-samsung-gts7lwifi: Enable UFS
+ storage
+
+Enable the UFS host controller and PHY with their PM8150 supplies.
+
+The shared S4A, L9A and L17A supplies are kept always on: in the stock
+device tree S4A and L9A are held on at boot (L9A also feeds the DSI
+controller that the bootloader-initialized display depends on) and L17A
+is always on.
+
+Assisted-by: Claude:claude-opus-5
+---
+ .../dts/qcom/sm8250-samsung-gts7lwifi.dts     | 54 +++++++++++++++++++
+ 1 file changed, 54 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts b/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+index e8e895607..b30fa6c53 100644
+--- a/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
++++ b/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+@@ -217,6 +217,15 @@ regulators-0 {
+ 		compatible = "qcom,pm8150-rpmh-regulators";
+ 		qcom,pmic-id = "a";
+ 
++		/* Shared 1.8V rail (Wi-Fi IO, codec), kept on by the stock bootloader */
++		vreg_s4a_1p8: smps4 {
++			regulator-name = "vreg_s4a_1p8";
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1920000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++			regulator-always-on;
++		};
++
+ 		vreg_l2a_3p1: ldo2 {
+ 			regulator-name = "vreg_l2a_3p1";
+ 			regulator-min-microvolt = <3072000>;
+@@ -233,12 +242,39 @@ vreg_l5a_0p88: ldo5 {
+ 			regulator-always-on;
+ 		};
+ 
++		vreg_l6a_1p2: ldo6 {
++			regulator-name = "vreg_l6a_1p2";
++			regulator-min-microvolt = <1200000>;
++			regulator-max-microvolt = <1200000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++			regulator-allow-set-load;
++			regulator-allowed-modes = <RPMH_REGULATOR_MODE_LPM
++						   RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		/* Also supplies the DSI controller used by the framebuffer */
++		vreg_l9a_1p2: ldo9 {
++			regulator-name = "vreg_l9a_1p2";
++			regulator-min-microvolt = <1200000>;
++			regulator-max-microvolt = <1200000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++			regulator-always-on;
++		};
++
+ 		vreg_l12a_1p8: ldo12 {
+ 			regulator-name = "vreg_l12a_1p8";
+ 			regulator-min-microvolt = <1800000>;
+ 			regulator-max-microvolt = <1800000>;
+ 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+ 		};
++
++		vreg_l17a_3p0: ldo17 {
++			regulator-name = "vreg_l17a_3p0";
++			regulator-min-microvolt = <2496000>;
++			regulator-max-microvolt = <3008000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++			regulator-always-on;
++		};
+ 	};
+ 
+ 	regulators-1 {
+@@ -315,6 +351,24 @@ sdc2_card_det_n: sd-card-det-n-state {
+ 	};
+ };
+ 
++&ufs_mem_hc {
++	vcc-supply = <&vreg_l17a_3p0>;
++	vcc-max-microamp = <800000>;
++	vccq-supply = <&vreg_l6a_1p2>;
++	vccq-max-microamp = <800000>;
++	vccq2-supply = <&vreg_s4a_1p8>;
++	vccq2-max-microamp = <800000>;
++
++	status = "okay";
++};
++
++&ufs_mem_phy {
++	vdda-phy-supply = <&vreg_l5a_0p88>;
++	vdda-pll-supply = <&vreg_l9a_1p2>;
++
++	status = "okay";
++};
++
+ &usb_1 {
+ 	/* USB 2.0 only */
+ 	qcom,select-utmi-as-pipe-clk;
+-- 
+2.47.3
+

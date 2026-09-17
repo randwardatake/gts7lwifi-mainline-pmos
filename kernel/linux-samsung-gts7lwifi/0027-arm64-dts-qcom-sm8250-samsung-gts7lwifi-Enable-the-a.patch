@@ -1,0 +1,52 @@
+From 733b1d5b8a2c08e27a587b9db0060c1d94f654b0 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ege=20Co=C5=9Fkun?= <randward@proton.me>
+Date: Mon, 14 Sep 2026 01:30:52 +0300
+Subject: [PATCH 27/33] arm64: dts: qcom: sm8250-samsung-gts7lwifi: Enable the
+ amplifier fsync workaround
+
+The vendor devicetree enables it for all four speaker amplifiers.
+
+Assisted-by: Claude:claude-opus-5
+---
+ arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts b/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+index 1ffa8e89f..20fb9fcc4 100644
+--- a/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
++++ b/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+@@ -530,6 +530,7 @@ speaker_amp_tr: speaker-amp@40 {
+ 		cirrus,asp-sdout-hiz = <3>;
+ 		cirrus,gpio2-src-select = <4>;
+ 		cirrus,gpio2-output-enable;
++		cirrus,use-fsync-errata;
+ 		sound-name-prefix = "TR";
+ 		#sound-dai-cells = <1>;
+ 	};
+@@ -545,6 +546,7 @@ speaker_amp_tl: speaker-amp@41 {
+ 		cirrus,asp-sdout-hiz = <3>;
+ 		cirrus,gpio2-src-select = <4>;
+ 		cirrus,gpio2-output-enable;
++		cirrus,use-fsync-errata;
+ 		sound-name-prefix = "TL";
+ 		#sound-dai-cells = <1>;
+ 	};
+@@ -560,6 +562,7 @@ speaker_amp_br: speaker-amp@42 {
+ 		cirrus,asp-sdout-hiz = <3>;
+ 		cirrus,gpio2-src-select = <4>;
+ 		cirrus,gpio2-output-enable;
++		cirrus,use-fsync-errata;
+ 		sound-name-prefix = "BR";
+ 		#sound-dai-cells = <1>;
+ 	};
+@@ -575,6 +578,7 @@ speaker_amp_bl: speaker-amp@43 {
+ 		cirrus,asp-sdout-hiz = <3>;
+ 		cirrus,gpio2-src-select = <4>;
+ 		cirrus,gpio2-output-enable;
++		cirrus,use-fsync-errata;
+ 		sound-name-prefix = "BL";
+ 		#sound-dai-cells = <1>;
+ 	};
+-- 
+2.47.3
+

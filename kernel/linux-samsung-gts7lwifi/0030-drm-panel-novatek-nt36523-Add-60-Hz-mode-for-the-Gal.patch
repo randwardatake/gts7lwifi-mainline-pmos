@@ -1,0 +1,132 @@
+From 53ebc05643a37ea8afa1d0983948b3ec3ddb1545 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ege=20Co=C5=9Fkun?= <randward@proton.me>
+Date: Mon, 14 Sep 2026 04:28:19 +0300
+Subject: [PATCH 30/33] drm/panel: novatek-nt36523: Add 60 Hz mode for the
+ Galaxy Tab S7 panel
+
+The vendor driver changes the refresh rate by stretching the vertical
+front porch at the same pixel clock and writing the frame rate to
+register 0x23 of command page 0x2a (0x0d for 120 Hz, 0x0c for 60 Hz).
+Add the 60 Hz mode and program the register from the mode that is being
+enabled, the way panel-novatek-nt35950 finds its current mode.
+
+Assisted-by: Claude:claude-opus-5
+---
+ drivers/gpu/drm/panel/panel-novatek-nt36523.c | 52 +++++++++++++++++++
+ 1 file changed, 52 insertions(+)
+
+diff --git a/drivers/gpu/drm/panel/panel-novatek-nt36523.c b/drivers/gpu/drm/panel/panel-novatek-nt36523.c
+index 50fffa00a..59395fcbe 100644
+--- a/drivers/gpu/drm/panel/panel-novatek-nt36523.c
++++ b/drivers/gpu/drm/panel/panel-novatek-nt36523.c
+@@ -32,6 +32,7 @@ struct panel_info {
+ 	struct gpio_desc *reset_gpio;
+ 	struct backlight_device *backlight;
+ 	struct regulator *vddio;
++	struct drm_connector *connector;
+ };
+ 
+ struct panel_desc {
+@@ -47,6 +48,7 @@ struct panel_desc {
+ 	unsigned int num_modes;
+ 	const struct mipi_dsi_device_info dsi_info;
+ 	int (*init_sequence)(struct panel_info *pinfo);
++	int (*set_refresh_rate)(struct panel_info *pinfo, int vrefresh);
+ 
+ 	bool is_dual_dsi;
+ 	bool has_dcs_backlight;
+@@ -1340,6 +1342,25 @@ static const struct panel_desc elish_csot_desc = {
+ 	.is_dual_dsi = true,
+ };
+ 
++static int gts7lwifi_csot_set_refresh_rate(struct panel_info *pinfo, int vrefresh)
++{
++	struct mipi_dsi_device *dsi0 = pinfo->dsi[0];
++	struct mipi_dsi_device *dsi1 = pinfo->dsi[1];
++	struct mipi_dsi_multi_context dsi_ctx = { .dsi = NULL };
++
++	/* The panel runs at 120 Hz after init, the vendor driver switches it like this */
++	if (vrefresh != 60)
++		return 0;
++
++	mipi_dsi_dual_dcs_write_seq_multi(&dsi_ctx, dsi0, dsi1, 0xff, 0x2a);
++	mipi_dsi_dual_dcs_write_seq_multi(&dsi_ctx, dsi0, dsi1, 0xfb, 0x01);
++	mipi_dsi_dual_dcs_write_seq_multi(&dsi_ctx, dsi0, dsi1, 0x23, 0x0c);
++	mipi_dsi_dual_dcs_write_seq_multi(&dsi_ctx, dsi0, dsi1, 0xff, 0x10);
++	mipi_dsi_dual_dcs_write_seq_multi(&dsi_ctx, dsi0, dsi1, 0xfb, 0x01);
++
++	return dsi_ctx.accum_err;
++}
++
+ static const struct drm_display_mode gts7lwifi_csot_modes[] = {
+ 	{
+ 		/* Stock timings are per DSI link, so the horizontal ones are doubled */
+@@ -1353,6 +1374,18 @@ static const struct drm_display_mode gts7lwifi_csot_modes[] = {
+ 		.vsync_end = 2560 + 26 + 1,
+ 		.vtotal = 2560 + 26 + 1 + 7,
+ 	},
++	{
++		/* Same pixel clock, the vertical front porch doubles the frame time */
++		.clock = (1600 + 168 + 4 + 60) * (2560 + 26 + 1 + 7) * 120 / 1000,
++		.hdisplay = 1600,
++		.hsync_start = 1600 + 168,
++		.hsync_end = 1600 + 168 + 4,
++		.htotal = 1600 + 168 + 4 + 60,
++		.vdisplay = 2560,
++		.vsync_start = 2560 + 2620,
++		.vsync_end = 2560 + 2620 + 1,
++		.vtotal = 2560 + 2620 + 1 + 7,
++	},
+ };
+ 
+ static const struct panel_desc gts7lwifi_csot_desc = {
+@@ -1371,6 +1404,7 @@ static const struct panel_desc gts7lwifi_csot_desc = {
+ 	.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
+ 		      MIPI_DSI_CLOCK_NON_CONTINUOUS | MIPI_DSI_MODE_LPM,
+ 	.init_sequence = gts7lwifi_csot_init_sequence,
++	.set_refresh_rate = gts7lwifi_csot_set_refresh_rate,
+ 	.is_dual_dsi = true,
+ 	.has_dcs_backlight = true,
+ 	.max_brightness = 462,
+@@ -1402,6 +1436,17 @@ static void nt36523_reset(struct panel_info *pinfo)
+ 	usleep_range(12000, 13000);
+ }
+ 
++/* Refresh rate of the mode being enabled, the first mode before a modeset */
++static int nt36523_current_vrefresh(struct panel_info *pinfo)
++{
++	struct drm_connector *connector = pinfo->connector;
++
++	if (!connector || !connector->state || !connector->state->crtc)
++		return drm_mode_vrefresh(&pinfo->desc->modes[0]);
++
++	return drm_mode_vrefresh(&connector->state->crtc->state->mode);
++}
++
+ static int nt36523_prepare(struct drm_panel *panel)
+ {
+ 	struct panel_info *pinfo = to_panel_info(panel);
+@@ -1422,6 +1467,12 @@ static int nt36523_prepare(struct drm_panel *panel)
+ 		return ret;
+ 	}
+ 
++	if (pinfo->desc->set_refresh_rate) {
++		ret = pinfo->desc->set_refresh_rate(pinfo, nt36523_current_vrefresh(pinfo));
++		if (ret < 0)
++			dev_err(panel->dev, "failed to set refresh rate: %d\n", ret);
++	}
++
+ 	return 0;
+ }
+ 
+@@ -1492,6 +1543,7 @@ static int nt36523_get_modes(struct drm_panel *panel,
+ 	connector->display_info.width_mm = pinfo->desc->width_mm;
+ 	connector->display_info.height_mm = pinfo->desc->height_mm;
+ 	connector->display_info.bpc = pinfo->desc->bpc;
++	pinfo->connector = connector;
+ 
+ 	return pinfo->desc->num_modes;
+ }
+-- 
+2.47.3
+

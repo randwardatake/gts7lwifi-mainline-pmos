@@ -1,0 +1,218 @@
+From 1945ec08f65cca3043a74cd6a62f75f90f02467e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ege=20Co=C5=9Fkun?= <randward@proton.me>
+Date: Sun, 13 Sep 2026 21:05:11 +0300
+Subject: [PATCH 19/33] arm64: dts: qcom: sm8250-samsung-gts7lwifi: Enable
+ speakers
+
+Enable the ADSP and the four CS35L41 speaker amplifiers on the primary
+TDM interface. The boost values match the amplifier reset defaults that
+the vendor kernel relies on. The shared reset line is held deasserted.
+
+Assisted-by: Claude:claude-opus-5
+---
+ .../dts/qcom/sm8250-samsung-gts7lwifi.dts     | 147 ++++++++++++++++++
+ 1 file changed, 147 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts b/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+index d5f835949..7992b0d08 100644
+--- a/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
++++ b/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+@@ -7,6 +7,8 @@
+ 
+ #include <dt-bindings/phy/phy.h>
+ #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
++#include <dt-bindings/sound/qcom,q6afe.h>
++#include <dt-bindings/sound/qcom,q6asm.h>
+ #include "sm8250.dtsi"
+ #include "pm8150.dtsi"
+ #include "pm8150l.dtsi"
+@@ -332,6 +334,12 @@ memory@100000000 {
+ 	};
+ };
+ 
++&adsp {
++	firmware-name = "qcom/sm8250/samsung/gts7lwifi/adsp.mdt";
++
++	status = "okay";
++};
++
+ &apps_rsc {
+ 	regulators-0 {
+ 		compatible = "qcom,pm8150-rpmh-regulators";
+@@ -503,6 +511,75 @@ fuel-gauge@36 {
+ 	};
+ };
+ 
++&i2c11 {
++	clock-frequency = <400000>;
++
++	pinctrl-0 = <&qup_i2c11_default>, <&speaker_amp_irq>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	speaker_amp_tr: speaker-amp@40 {
++		compatible = "cirrus,cs35l41";
++		reg = <0x40>;
++		interrupts-extended = <&tlmm 84 IRQ_TYPE_LEVEL_LOW>;
++		cirrus,boost-type = <0>;
++		cirrus,boost-peak-milliamp = <4100>;
++		cirrus,boost-ind-nanohenry = <1000>;
++		cirrus,boost-cap-microfarad = <15>;
++		cirrus,asp-sdout-hiz = <3>;
++		cirrus,gpio2-src-select = <4>;
++		cirrus,gpio2-output-enable;
++		sound-name-prefix = "TR";
++		#sound-dai-cells = <1>;
++	};
++
++	speaker_amp_tl: speaker-amp@41 {
++		compatible = "cirrus,cs35l41";
++		reg = <0x41>;
++		interrupts-extended = <&tlmm 84 IRQ_TYPE_LEVEL_LOW>;
++		cirrus,boost-type = <0>;
++		cirrus,boost-peak-milliamp = <4100>;
++		cirrus,boost-ind-nanohenry = <1000>;
++		cirrus,boost-cap-microfarad = <15>;
++		cirrus,asp-sdout-hiz = <3>;
++		cirrus,gpio2-src-select = <4>;
++		cirrus,gpio2-output-enable;
++		sound-name-prefix = "TL";
++		#sound-dai-cells = <1>;
++	};
++
++	speaker_amp_br: speaker-amp@42 {
++		compatible = "cirrus,cs35l41";
++		reg = <0x42>;
++		interrupts-extended = <&tlmm 84 IRQ_TYPE_LEVEL_LOW>;
++		cirrus,boost-type = <0>;
++		cirrus,boost-peak-milliamp = <4100>;
++		cirrus,boost-ind-nanohenry = <1000>;
++		cirrus,boost-cap-microfarad = <15>;
++		cirrus,asp-sdout-hiz = <3>;
++		cirrus,gpio2-src-select = <4>;
++		cirrus,gpio2-output-enable;
++		sound-name-prefix = "BR";
++		#sound-dai-cells = <1>;
++	};
++
++	speaker_amp_bl: speaker-amp@43 {
++		compatible = "cirrus,cs35l41";
++		reg = <0x43>;
++		interrupts-extended = <&tlmm 84 IRQ_TYPE_LEVEL_LOW>;
++		cirrus,boost-type = <0>;
++		cirrus,boost-peak-milliamp = <4100>;
++		cirrus,boost-ind-nanohenry = <1000>;
++		cirrus,boost-cap-microfarad = <15>;
++		cirrus,asp-sdout-hiz = <3>;
++		cirrus,gpio2-src-select = <4>;
++		cirrus,gpio2-output-enable;
++		sound-name-prefix = "BL";
++		#sound-dai-cells = <1>;
++	};
++};
++
+ &i2c5 {
+ 	clock-frequency = <400000>;
+ 
+@@ -654,10 +731,32 @@ &pon_resin {
+ 	status = "okay";
+ };
+ 
++&q6afedai {
++	dai@48 {
++		reg = <PRIMARY_TDM_RX_0>;
++		qcom,tdm-sync-mode = <0>;
++		qcom,tdm-sync-src = <1>;
++		qcom,tdm-data-out = <0>;
++		qcom,tdm-invert-sync = <0>;
++		qcom,tdm-data-delay = <1>;
++		qcom,tdm-data-align = <0>;
++	};
++};
++
++&q6asmdai {
++	dai@0 {
++		reg = <0>;
++	};
++};
++
+ &qupv3_id_0 {
+ 	status = "okay";
+ };
+ 
++&qupv3_id_1 {
++	status = "okay";
++};
++
+ &sdhc_2 {
+ 	cd-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
+ 
+@@ -675,9 +774,50 @@ &sdhc_2 {
+ 	status = "okay";
+ };
+ 
++&sound {
++	compatible = "qcom,sm8250-sndcard";
++	model = "Samsung Galaxy Tab S7";
++
++	pinctrl-0 = <&pri_mi2s_active>;
++	pinctrl-names = "default";
++
++	mm1-dai-link {
++		link-name = "MultiMedia1";
++
++		cpu {
++			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA1>;
++		};
++	};
++
++	speaker-dai-link {
++		link-name = "Primary TDM Playback";
++
++		cpu {
++			sound-dai = <&q6afedai PRIMARY_TDM_RX_0>;
++		};
++
++		platform {
++			sound-dai = <&q6routing>;
++		};
++
++		codec {
++			sound-dai = <&speaker_amp_tl 0>, <&speaker_amp_tr 0>,
++				    <&speaker_amp_bl 0>, <&speaker_amp_br 0>;
++		};
++	};
++};
++
+ &tlmm {
+ 	gpio-reserved-ranges = <20 4>, <40 4>;
+ 
++	/* Shared by all four amplifiers, so no single driver may toggle it */
++	speaker-amp-reset-hog {
++		gpio-hog;
++		gpios = <69 GPIO_ACTIVE_HIGH>;
++		output-high;
++		line-name = "speaker-amp-reset-n";
++	};
++
+ 	bt_en_default: bt-en-default-state {
+ 		pins = "gpio76";
+ 		function = "gpio";
+@@ -733,6 +873,13 @@ sdc2_card_det_n: sd-card-det-n-state {
+ 		bias-disable;
+ 	};
+ 
++	speaker_amp_irq: speaker-amp-irq-state {
++		pins = "gpio84";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
+ 	ts_int_default: ts-int-default-state {
+ 		pins = "gpio15";
+ 		function = "gpio";
+-- 
+2.47.3
+

@@ -1,0 +1,9 @@
+/* GPU OC v1 — FAILED (GMU OOB GPU_SET timeout -> llvmpipe software render).
+ * Cause: TURBO RPMh corner + NO ACD level. Append to sm8250-samsung-gts7lwifi.dts. */
+&gpu_opp_table {
+	opp-700000000 {
+		opp-hz = /bits/ 64 <700000000>;
+		opp-level = <RPMH_REGULATOR_LEVEL_TURBO>;
+		opp-supported-hw = <0xff>;
+	};
+};

@@ -1,0 +1,34 @@
+From f525196aaefc68e27e03ce5a1964c615771aa1ce Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ege=20Co=C5=9Fkun?= <randward@proton.me>
+Date: Sun, 13 Sep 2026 06:04:59 +0300
+Subject: [PATCH 08/33] dmaengine: qcom: gpi: Allow overriding the execution
+ environment offset
+
+The stock firmware of the Samsung Galaxy Tab S7 places the GPI execution
+environment at 0x1000 on SM8250, where the driver assumes 0. Channel
+allocation then times out. Read the offset from the devicetree when
+present.
+
+Assisted-by: Claude:claude-opus-5
+---
+ drivers/dma/qcom/gpi.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/dma/qcom/gpi.c b/drivers/dma/qcom/gpi.c
+index a5055a627..be509ab06 100644
+--- a/drivers/dma/qcom/gpi.c
++++ b/drivers/dma/qcom/gpi.c
+@@ -2189,7 +2189,9 @@ static int gpi_probe(struct platform_device *pdev)
+ 		return ret;
+ 	}
+ 
+-	ee_offset = (uintptr_t)device_get_match_data(gpi_dev->dev);
++	/* Some firmware variants place this execution environment elsewhere */
++	if (of_property_read_u32(gpi_dev->dev->of_node, "qcom,gpi-ee-offset", &ee_offset))
++		ee_offset = (uintptr_t)device_get_match_data(gpi_dev->dev);
+ 	gpi_dev->ee_base = gpi_dev->ee_base - ee_offset;
+ 
+ 	gpi_dev->ev_factor = EV_FACTOR;
+-- 
+2.47.3
+

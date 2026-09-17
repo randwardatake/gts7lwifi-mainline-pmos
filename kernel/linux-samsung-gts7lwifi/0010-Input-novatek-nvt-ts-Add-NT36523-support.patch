@@ -1,0 +1,52 @@
+From de6416c5c21b868ef9da0e3f0c1a914f1586abd2 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ege=20Co=C5=9Fkun?= <randward@proton.me>
+Date: Sun, 13 Sep 2026 06:04:59 +0300
+Subject: [PATCH 10/33] Input: novatek-nvt-ts: Add NT36523 support
+
+Add the NT36523 as found on the Samsung Galaxy Tab S7. It reports chip
+id 0x08 in its parameters. Its reset line is not exposed to the host,
+so make the reset GPIO optional.
+
+Assisted-by: Claude:claude-opus-5
+---
+ drivers/input/touchscreen/novatek-nvt-ts.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/input/touchscreen/novatek-nvt-ts.c b/drivers/input/touchscreen/novatek-nvt-ts.c
+index 0f771f681..d2896c4b5 100644
+--- a/drivers/input/touchscreen/novatek-nvt-ts.c
++++ b/drivers/input/touchscreen/novatek-nvt-ts.c
+@@ -234,7 +234,7 @@ static int nvt_ts_probe(struct i2c_client *client)
+ 		return error;
+ 	}
+ 
+-	data->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_LOW);
++	data->reset_gpio = devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_LOW);
+ 	error = PTR_ERR_OR_ZERO(data->reset_gpio);
+ 	if (error) {
+ 		regulator_bulk_disable(ARRAY_SIZE(data->regulators), data->regulators);
+@@ -318,8 +318,13 @@ static const struct nvt_ts_i2c_chip_data nvt_nt36672a_ts_data = {
+ 	.chip_id = 0x08,
+ };
+ 
++static const struct nvt_ts_i2c_chip_data nvt_nt36523_ts_data = {
++	.chip_id = 0x08,
++};
++
+ static const struct of_device_id nvt_ts_of_match[] = {
+ 	{ .compatible = "novatek,nt11205-ts", .data = &nvt_nt11205_ts_data },
++	{ .compatible = "novatek,nt36523-ts", .data = &nvt_nt36523_ts_data },
+ 	{ .compatible = "novatek,nt36672a-ts", .data = &nvt_nt36672a_ts_data },
+ 	{ }
+ };
+@@ -327,6 +332,7 @@ MODULE_DEVICE_TABLE(of, nvt_ts_of_match);
+ 
+ static const struct i2c_device_id nvt_ts_i2c_id[] = {
+ 	{ .name = "nt11205-ts", .driver_data = (unsigned long)&nvt_nt11205_ts_data },
++	{ .name = "nt36523-ts", .driver_data = (unsigned long)&nvt_nt36523_ts_data },
+ 	{ .name = "nt36672a-ts", .driver_data = (unsigned long)&nvt_nt36672a_ts_data },
+ 	{ }
+ };
+-- 
+2.47.3
+

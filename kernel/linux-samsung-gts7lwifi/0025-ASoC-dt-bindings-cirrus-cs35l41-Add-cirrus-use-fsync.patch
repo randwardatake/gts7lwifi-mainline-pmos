@@ -1,0 +1,32 @@
+From 1d632238ddbea07d0004ef321998063e2a46edac Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ege=20Co=C5=9Fkun?= <randward@proton.me>
+Date: Mon, 14 Sep 2026 01:30:52 +0300
+Subject: [PATCH 25/33] ASoC: dt-bindings: cirrus,cs35l41: Add
+ cirrus,use-fsync-errata
+
+Assisted-by: Claude:claude-opus-5
+---
+ .../devicetree/bindings/sound/cirrus,cs35l41.yaml          | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/sound/cirrus,cs35l41.yaml b/Documentation/devicetree/bindings/sound/cirrus,cs35l41.yaml
+index e6cf2ebcd..5f7bd3ab0 100644
+--- a/Documentation/devicetree/bindings/sound/cirrus,cs35l41.yaml
++++ b/Documentation/devicetree/bindings/sound/cirrus,cs35l41.yaml
+@@ -151,6 +151,13 @@ properties:
+     minimum: 0
+     maximum: 5
+ 
++  cirrus,use-fsync-errata:
++    description:
++      Boolean which specifies that the audio serial port frame sync
++      detection workaround is applied. Needed when the amplifier receives
++      TDM frames with a one bit clock long frame sync pulse.
++    type: boolean
++
+   cirrus,subsystem-id:
+     $ref: /schemas/types.yaml#/definitions/string
+     description:
+-- 
+2.47.3
+

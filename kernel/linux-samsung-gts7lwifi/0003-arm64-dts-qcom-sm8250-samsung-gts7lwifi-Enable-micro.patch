@@ -1,0 +1,102 @@
+From fd74ef08bbd84240b55e7f1ae30b50ee8e2fc7af Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ege=20Co=C5=9Fkun?= <randward@proton.me>
+Date: Sun, 13 Sep 2026 03:57:13 +0300
+Subject: [PATCH 03/33] arm64: dts: qcom: sm8250-samsung-gts7lwifi: Enable
+ microSD card slot
+
+Enable the SDHC2 controller used for the microSD slot, together with the
+PM8150L LDO6/LDO9 supplies and the card detect GPIO. The voltage ranges,
+card detect polarity and pin settings match the stock device tree.
+
+Assisted-by: Claude:claude-opus-5
+---
+ .../dts/qcom/sm8250-samsung-gts7lwifi.dts     | 69 +++++++++++++++++++
+ 1 file changed, 69 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts b/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+index 9f78aa186..e8e895607 100644
+--- a/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
++++ b/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+@@ -240,10 +240,79 @@ vreg_l12a_1p8: ldo12 {
+ 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+ 		};
+ 	};
++
++	regulators-1 {
++		compatible = "qcom,pm8150l-rpmh-regulators";
++		qcom,pmic-id = "c";
++
++		vreg_l6c_2p9: ldo6 {
++			regulator-name = "vreg_l6c_2p9";
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <2960000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++			regulator-allow-set-load;
++			regulator-allowed-modes = <RPMH_REGULATOR_MODE_LPM
++						   RPMH_REGULATOR_MODE_HPM>;
++		};
++
++		vreg_l9c_2p9: ldo9 {
++			regulator-name = "vreg_l9c_2p9";
++			regulator-min-microvolt = <2950000>;
++			regulator-max-microvolt = <2960000>;
++			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
++			regulator-allow-set-load;
++			regulator-allowed-modes = <RPMH_REGULATOR_MODE_LPM
++						   RPMH_REGULATOR_MODE_HPM>;
++		};
++	};
++};
++
++&sdhc_2 {
++	cd-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
++
++	pinctrl-0 = <&sdc2_default_state &sdc2_card_det_n>;
++	pinctrl-1 = <&sdc2_sleep_state &sdc2_card_det_n>;
++	pinctrl-names = "default", "sleep";
++
++	vmmc-supply = <&vreg_l9c_2p9>;
++	vqmmc-supply = <&vreg_l6c_2p9>;
++
++	bus-width = <4>;
++	no-sdio;
++	no-mmc;
++
++	status = "okay";
+ };
+ 
+ &tlmm {
+ 	gpio-reserved-ranges = <20 4>, <40 4>;
++
++	sdc2_default_state: sdc2-default-state {
++		clk-pins {
++			pins = "sdc2_clk";
++			drive-strength = <12>;
++			bias-disable;
++		};
++
++		cmd-pins {
++			pins = "sdc2_cmd";
++			drive-strength = <8>;
++			bias-pull-up;
++		};
++
++		data-pins {
++			pins = "sdc2_data";
++			drive-strength = <8>;
++			bias-pull-up;
++		};
++	};
++
++	sdc2_card_det_n: sd-card-det-n-state {
++		pins = "gpio77";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
+ };
+ 
+ &usb_1 {
+-- 
+2.47.3
+

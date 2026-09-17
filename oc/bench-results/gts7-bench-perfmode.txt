@@ -1,0 +1,6 @@
+idle maxT=33
+    events per second:  3333.63
+Tot:             685   2914  19952
+after cpu maxT=74
+                                   vkmark Score: 12384
+after vk maxT=65

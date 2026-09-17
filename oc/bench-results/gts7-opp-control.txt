@@ -1,0 +1,12 @@
+830674ec939ff2ddade1f762233c53a5a7aa9067dd5508d75d89b19cdc8588a6  step42-opp-control.img
+rebooting
+freqs: 305000000 400000000 441600000 490000000 525000000 587000000 670000000
+init_errors: 0
+glamor=yes
+run1 cur=670 score=2112 T=64
+run2 cur=670 score=2108 T=69
+run3 cur=670 score=2107 T=69
+run4 cur=670 score=2109 T=72
+run5 cur=670 score=2110 T=72
+run6 cur=670 score=2108 T=72
+hangs: 0  maxT=72

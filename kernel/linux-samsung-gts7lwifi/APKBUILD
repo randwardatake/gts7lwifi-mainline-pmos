@@ -1,0 +1,144 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: linux-postmarketos-qcom-sm8250
+maintainer="Ege Coşkun <randward@proton.me>"
+_flavor="samsung-gts7lwifi"
+pkgname=linux-$_flavor
+pkgver=7.2.0
+pkgrel=23
+pkgdesc="Samsung Galaxy Tab S7 Wi-Fi kernel fork (SM8250)"
+arch="aarch64"
+_carch="arm64"
+url="https://gitlab.postmarketos.org/soc/qualcomm-sm8250/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+"
+makedepends="
+	bash
+	bison
+	clang
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+"
+
+_tag="sm8250-$pkgver"
+_config="config-$_flavor.$arch"
+source="
+	linux-postmarketos-qcom-sm8250-$_tag.tar.gz::https://gitlab.postmarketos.org/soc/qualcomm-sm8250/linux/-/archive/$_tag/linux-$_tag.tar.gz
+	$_config
+	0001-dt-bindings-arm-qcom-Add-Samsung-Galaxy-Tab-S7-Wi-Fi.patch
+	0002-arm64-dts-qcom-Add-Samsung-Galaxy-Tab-S7-Wi-Fi.patch
+	0003-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-micro.patch
+	0004-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-UFS-s.patch
+	0005-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-I2C0.patch
+	0006-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-PMICs.patch
+	0007-dt-bindings-dma-qcom-gpi-Add-qcom-gpi-ee-offset-prop.patch
+	0008-dmaengine-qcom-gpi-Allow-overriding-the-execution-en.patch
+	0009-dt-bindings-input-touchscreen-novatek-nvt-ts-Add-NT3.patch
+	0010-Input-novatek-nvt-ts-Add-NT36523-support.patch
+	0011-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-touch.patch
+	0012-mfd-max77705-Accept-the-MD15-PASS2-variant.patch
+	0013-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-GPU.patch
+	0014-dt-bindings-display-panel-novatek-nt36523-Add-Samsun.patch
+	0015-drm-panel-novatek-nt36523-Add-Samsung-Galaxy-Tab-S7-.patch
+	0016-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-displ.patch
+	0017-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-Wi-Fi.patch
+	0018-ASoC-qcom-sm8250-Set-the-codec-PLL-reference-for-TDM.patch
+	0019-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-speak.patch
+	0020-ASoC-cs35l41-Implement-set_tdm_slot.patch
+	0021-ASoC-qcom-sm8250-Set-the-codec-TDM-slots-on-the-prim.patch
+	0022-ASoC-qcom-sm8250-Use-4-slots-on-the-primary-TDM-link.patch
+	0023-ASoC-qcom-q6afe-Apply-the-TDM-data-out-sync-inversio.patch
+	0024-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Use-the-vend.patch
+	0025-ASoC-dt-bindings-cirrus-cs35l41-Add-cirrus-use-fsync.patch
+	0026-ASoC-cs35l41-Add-the-frame-sync-detection-workaround.patch
+	0027-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-the-a.patch
+	0028-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Allow-USB-ho.patch
+	0029-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-Venus.patch
+	0030-drm-panel-novatek-nt36523-Add-60-Hz-mode-for-the-Gal.patch
+	0031-dt-bindings-power-reset-qcom-pon-Add-qcom-no-cable-p.patch
+	0032-power-reset-qcom-pon-Optionally-disable-cable-power-.patch
+	0033-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Stay-off-wit.patch
+"
+builddir="$srcdir/linux-$_tag"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/$_config" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 olddefconfig
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+		"$pkgdir/boot/linux.efi"
+	install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz" \
+		"$pkgdir/boot/vmlinuz"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+26d48ebd04c43e993bd00f9c055d40daf87b4919332c974e3c0db236135b522415e3dcf4b512e4028cc42da63fe4639991c3870bcb977967846db590a0b950b7  linux-postmarketos-qcom-sm8250-sm8250-7.2.0.tar.gz
+7969f28665edbe5dc3e173e09a5fdc059616ddeac4a66ff7b592e243313c187c73d6afa221bf0934a89dc2c124dc180661385c743c8307b87d375cd7a947eba1  config-samsung-gts7lwifi.aarch64
+c111e20a9bf8a05a26b1356a9defb11cd5b56d3835397fab561119055b0e59ac09fdc78955cfbb49e98f6028c85156d409f1bbad95f2123b6fa1ffb9b1eae717  0001-dt-bindings-arm-qcom-Add-Samsung-Galaxy-Tab-S7-Wi-Fi.patch
+0fa042bc79c8d85b8db92198e18d1df6452dc31e3aea85575ec94c673adf6067673d946e4891078dd51913db773eb46ab87cd5f90fb067d8b337fa33db138e48  0002-arm64-dts-qcom-Add-Samsung-Galaxy-Tab-S7-Wi-Fi.patch
+b9e1a4785059e75bf125403088aa7db74d91cfab32ab3427dc013d69b748437f1c2cc3a31084a80e90e7be634855e26b29d0618c53804882d0da057433cbaa24  0003-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-micro.patch
+e0845c2b4920f9e18af8415468c477ce42315bdfb8519b5c69b8c8db4fecf10b25c1ceffa59bf54a9699efc4f24c8cbace573cf3e3a124387785ec13bc6a7cc0  0004-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-UFS-s.patch
+48d46838754646b5c5c588995cf72a47f69b2edecef546fc30bcd9e6ffaa99a58b87a542a606826d8d620b08c6edfa058cd8602180dced5199a2b609c1e55d97  0005-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-I2C0.patch
+e84ed3b88ff77622ec00e15123c7ecc7a8600a8a1b184d8b155b19cf2a571d633e2ac01b934f198ee250d4d7ea9cb5377cfbe26ae4033417d395474588a64931  0006-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-PMICs.patch
+eabd7be6162735176d3efaba5dbe81e05c4576d1da00c48f5671b3a48c65cf410b1eaa26c2425ba422d8d6bc1a742444f584e84c40011fcc8a0092510034b9b6  0007-dt-bindings-dma-qcom-gpi-Add-qcom-gpi-ee-offset-prop.patch
+e075de0f0676ffd8240e948472692526b4e2918f0c0b38005f1e601898090329b66c221e50b34063691acf88c145d094aeeffb43cfbf6983f9a856954f139381  0008-dmaengine-qcom-gpi-Allow-overriding-the-execution-en.patch
+b4f7d0777d87ea1710a0cb88ae70af7e49639b069a006f1985357fdc8a5bba536d603c49a9f36bdb47c22d23b8b21f174b0203081a972e79f52346c4b8607448  0009-dt-bindings-input-touchscreen-novatek-nvt-ts-Add-NT3.patch
+92025b520e8e6be27bd3e68bfc976dc630cc00db5ce5222739bdf1930adacb7e9372e161132a66c9653d8576a718efa2c89a37fc3359d575af2e99ade186dba7  0010-Input-novatek-nvt-ts-Add-NT36523-support.patch
+8622df79743b6a0ce9c6fe07193b0d2295c7587100583f0dab643f1b18d26a918c0ffd3f66972978c41b76adf4dc7483183046eb7db6ec4f5e94d70e982b0209  0011-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-touch.patch
+959a5e22e31eb6e139a40d9228b918a7602503b0ee5ff7193d4f98afd7c2bdde5e6b0d26b5505021dd94647060dd2324aed94eaf3597e9f43863e90b307794b8  0012-mfd-max77705-Accept-the-MD15-PASS2-variant.patch
+0a92bc5ab5bff6cd740e0925b169d42b1e25fc8424ee4afbbc7f008525bf0b35b2f9f9655b04214ec3f56bffbf4a63611cb31b362be9fc1b767bfcfbb27a0f38  0013-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-GPU.patch
+ded15e72a2cfea417f5f18bce29aef0d843130e3e61982441d04755d12c99611f70344bcaa2cbfc5a5851891fff39daef17533a8969322821e9be7571252df65  0014-dt-bindings-display-panel-novatek-nt36523-Add-Samsun.patch
+3ccf488694dbd862f0cf891551785f984bd0bc7224f8171764801ab5d94b47cf48497c62923251badbf8e7fe184523c4d3e8e9acd02eb11a303a1b8c742a57f2  0015-drm-panel-novatek-nt36523-Add-Samsung-Galaxy-Tab-S7-.patch
+457981ca2f0007305668edaafff4721da86c79dd5cb2924f002f57b423bb2ec7559573f44537d8e108368017c6de48da657f0af61a3ca9d6a59a6405e028b837  0016-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-displ.patch
+c5ea63421d2514071959ed27c0434b3d966b2fe789768a783567d7c62ea6b5ce035f39cdd9b7b182ebd27d5f39f396d22f86bc5ef301ff87f7ad5401eaac475a  0017-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-Wi-Fi.patch
+cb7ebeefb15dfbd713003dcd46093aa19ed483836a5142b0d5d03f7b3258f2640a6133fcac422e93e11975fd76b5bf49e5381ae75ab05ff6512aeae098c7487b  0018-ASoC-qcom-sm8250-Set-the-codec-PLL-reference-for-TDM.patch
+d3d17a0edc2b79633d104b2ef8ac41aa75aaa486c848f9919a868922fabcfbc6a9d8da06a0905d257da75932aa4dd36fff2b3efd3f770ba240c6e152bcaa9d7e  0019-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-speak.patch
+f0d71cc6468c28cca0be6887298644d878d502f4518cd62e894ce6a5845be9d00ce8cf37539b296aa9b61cfe58891d652ea94bf8feb66540607bdbaac83d8218  0020-ASoC-cs35l41-Implement-set_tdm_slot.patch
+ef2129f29af8334bbc598261fd19b8340fdd747fa5331283a17541481b2ff9836d33122f2edcd9cd6cd709f5876f3ab3c38e91ca821edef913845382604d30c4  0021-ASoC-qcom-sm8250-Set-the-codec-TDM-slots-on-the-prim.patch
+35044bb9a0e5d91869c3725cdd71e0e1d13a861f6e0ddcfd49d5b3ddf0bfdd05ddb918b4dfea190dac3c8df3972e970cea11b87b690bbf54ef65afe58a0b672c  0022-ASoC-qcom-sm8250-Use-4-slots-on-the-primary-TDM-link.patch
+37e22e2284980050d779a257296ef98b77ced8a989da2172dbd6fe6baaf4c545123a5d52e05c63922ca8054672c046f7b921159c89f473ca574552b876e0c552  0023-ASoC-qcom-q6afe-Apply-the-TDM-data-out-sync-inversio.patch
+1ebf5f8f2eca73f6b55271a0cdedcedca5e63fa4ff3fe2260c116a787dacc65ed91be85f58de99510133b9821014c839965f0d2c98a4567095017171eee7b10d  0024-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Use-the-vend.patch
+7350f1c76cbe89122a9d2af88f45465764bcfc03d806d408d3f7142f07f72ff9ebaf05da03cf2abbf1ab7694702c2434f13372909b011f745b2f06c206248f0f  0025-ASoC-dt-bindings-cirrus-cs35l41-Add-cirrus-use-fsync.patch
+19480a981cb686e5d8dd7b1b9c74ac5cea64a129fa51b988ea237a5b4774f949893cb7e6961650f5a8003b96d2be28845a362006cbf4c62294f7402a5aa399f4  0026-ASoC-cs35l41-Add-the-frame-sync-detection-workaround.patch
+31d54950afec56e1fbbb3d12b7b401141d4b52786e48afa88cf3b24fcab917205e747538f3820c9a774054aecf449bbb9f46ab67915c408cbc76efea24e1167f  0027-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-the-a.patch
+c8a5dd6c41b6e1c452882238eab579deca2204ba068f740c670ba1ccd2897c6b9a9aaa578a11d279cb83a9bd38f7fc2aaf988016a2b459f4a2e7167c6806f78c  0028-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Allow-USB-ho.patch
+65eab4651e3845a918570bd278a4dba148235e5b41e701018142ec46792a2abcf9d745c49c3576cab7acfc5c88b06afe794758ac332c65b366b8c96a2dfa53b8  0029-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Enable-Venus.patch
+0c57b727315ecf7a096e5f3d27a76940d2007e797abd73b6302d2e1ac70fa8f83afd48d1aeb89583438aae8b5e03c47a12e58111fabea28f727e72b5998ffff7  0030-drm-panel-novatek-nt36523-Add-60-Hz-mode-for-the-Gal.patch
+e2660939d140f907e15e2ff7514f82ee1de4dca2dfef96d5c9239ae163b1742e43f359153c239241d9ed6cc882f59d8c4f2851ff31ed78762df02b0a9b479206  0031-dt-bindings-power-reset-qcom-pon-Add-qcom-no-cable-p.patch
+279c2f7143cb16ff6e3df9acef4514a5015dbe9862d53b7779d2d11787cf1e7681b299f3e38a6758cbfe3bb1f9d17e782a5a41ca4dec55ee0b6f37e94bc3005a  0032-power-reset-qcom-pon-Optionally-disable-cable-power-.patch
+c637f9ab59c549ad434d7d6a08ab7e310cfd9ecf71734c41a8e65afbb926453439056c5de018b7330f02c9d94a7e3dcd7565e34692b72c035f038bc70db0a62c  0033-arm64-dts-qcom-sm8250-samsung-gts7lwifi-Stay-off-wit.patch
+"

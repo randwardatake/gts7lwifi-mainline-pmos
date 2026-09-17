@@ -1,0 +1,53 @@
+From 97536d09f0870f2ff6623eedf0eedb9a6d35ebc5 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ege=20Co=C5=9Fkun?= <randward@proton.me>
+Date: Sun, 13 Sep 2026 06:41:41 +0300
+Subject: [PATCH 13/33] arm64: dts: qcom: sm8250-samsung-gts7lwifi: Enable GPU
+
+Enable the Adreno 650 GPU with the zap shader from the device firmware,
+and give the simple-framebuffer the physical panel dimensions.
+
+Assisted-by: Claude:claude-opus-5
+---
+ .../dts/qcom/sm8250-samsung-gts7lwifi.dts     | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts b/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+index b68a10964..42141988d 100644
+--- a/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
++++ b/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+@@ -67,6 +67,13 @@ framebuffer: framebuffer@9c000000 {
+ 				 <&dispcc DISP_CC_MDSS_PCLK0_CLK>,
+ 				 <&dispcc DISP_CC_MDSS_ESC0_CLK>;
+ 			power-domains = <&dispcc MDSS_GDSC>;
++			panel = <&panel>;
++
++			/* Physical dimensions for simple-framebuffer */
++			panel: dummy-panel {
++				width-mm = <148>;
++				height-mm = <236>;
++			};
+ 		};
+ 	};
+ 
+@@ -337,6 +344,18 @@ &gpi_dma0 {
+ 	status = "okay";
+ };
+ 
++&gmu {
++	status = "okay";
++};
++
++&gpu {
++	status = "okay";
++};
++
++&gpu_zap_shader {
++	firmware-name = "qcom/sm8250/samsung/gts7lwifi/a650_zap.mdt";
++};
++
+ &i2c0 {
+ 	clock-frequency = <100000>;
+ 
+-- 
+2.47.3
+

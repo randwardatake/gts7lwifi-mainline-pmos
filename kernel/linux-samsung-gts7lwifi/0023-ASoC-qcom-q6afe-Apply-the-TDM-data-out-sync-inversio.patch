@@ -1,0 +1,63 @@
+From d3b19a804d5c64713d318774355dae9bc7bd3254 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ege=20Co=C5=9Fkun?= <randward@proton.me>
+Date: Sun, 13 Sep 2026 22:59:04 +0300
+Subject: [PATCH 23/33] ASoC: qcom: q6afe: Apply the TDM data out, sync
+ inversion and data delay
+
+The qcom,tdm-data-out, qcom,tdm-invert-sync and qcom,tdm-data-delay
+properties are parsed but never passed to the DSP, so the port always
+runs with the default control settings. Pass them in the TDM port
+configuration.
+
+Assisted-by: Claude:claude-opus-5
+---
+ sound/soc/qcom/qdsp6/q6afe-dai.c | 3 +++
+ sound/soc/qcom/qdsp6/q6afe.c     | 3 +++
+ sound/soc/qcom/qdsp6/q6afe.h     | 3 +++
+ 3 files changed, 9 insertions(+)
+
+diff --git a/sound/soc/qcom/qdsp6/q6afe-dai.c b/sound/soc/qcom/qdsp6/q6afe-dai.c
+index a0d21034a..6d3a790df 100644
+--- a/sound/soc/qcom/qdsp6/q6afe-dai.c
++++ b/sound/soc/qcom/qdsp6/q6afe-dai.c
+@@ -278,6 +278,9 @@ static int q6tdm_hw_params(struct snd_pcm_substream *substream,
+ 	tdm->data_align_type = dai_data->priv[dai->id].data_align;
+ 	tdm->sync_src = dai_data->priv[dai->id].sync_src;
+ 	tdm->sync_mode = dai_data->priv[dai->id].sync_mode;
++	tdm->data_out_enable = dai_data->priv[dai->id].data_out_enable;
++	tdm->invert_sync = dai_data->priv[dai->id].invert_sync;
++	tdm->data_delay = dai_data->priv[dai->id].data_delay;
+ 
+ 	return 0;
+ }
+diff --git a/sound/soc/qcom/qdsp6/q6afe.c b/sound/soc/qcom/qdsp6/q6afe.c
+index 40237267f..0131fc8e6 100644
+--- a/sound/soc/qcom/qdsp6/q6afe.c
++++ b/sound/soc/qcom/qdsp6/q6afe.c
+@@ -1362,6 +1362,9 @@ void q6afe_tdm_port_prepare(struct q6afe_port *port,
+ 	pcfg->tdm_cfg.sync_mode = cfg->sync_mode;
+ 	pcfg->tdm_cfg.sync_src = cfg->sync_src;
+ 	pcfg->tdm_cfg.nslots_per_frame = cfg->nslots_per_frame;
++	pcfg->tdm_cfg.ctrl_data_out_enable = cfg->data_out_enable;
++	pcfg->tdm_cfg.ctrl_invert_sync_pulse = cfg->invert_sync;
++	pcfg->tdm_cfg.ctrl_sync_data_delay = cfg->data_delay;
+ 
+ 	pcfg->tdm_cfg.slot_width = cfg->slot_width;
+ 	pcfg->tdm_cfg.slot_mask = cfg->slot_mask;
+diff --git a/sound/soc/qcom/qdsp6/q6afe.h b/sound/soc/qcom/qdsp6/q6afe.h
+index 0b8c3ec13..b566294e0 100644
+--- a/sound/soc/qcom/qdsp6/q6afe.h
++++ b/sound/soc/qcom/qdsp6/q6afe.h
+@@ -192,6 +192,9 @@ struct q6afe_tdm_cfg {
+ 	u16	nslots_per_frame;
+ 	u16	slot_width;
+ 	u16	slot_mask;
++	u16	data_out_enable;
++	u16	invert_sync;
++	u16	data_delay;
+ 	u32	data_align_type;
+ 	u16	ch_mapping[AFE_MAX_CHAN_COUNT];
+ };
+-- 
+2.47.3
+

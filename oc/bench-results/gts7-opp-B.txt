@@ -1,0 +1,12 @@
+ccbda8db9645dde1f63b4fdedd476ce6eb624c4f2d3c2128c7efd3514eb49383  step44-opp-B-680top.img
+rebooting
+freqs: 305000000 400000000 441600000 490000000 525000000 587000000 670000000 680000000
+init_errors: 0
+glamor=yes
+run1 cur=680 score=2138 T=69
+run2 cur=680 score=2133 T=73
+run3 cur=680 score=2134 T=76
+run4 cur=680 score=2135 T=76
+run5 cur=680 score=2130 T=75
+run6 cur=680 score=2131 T=81
+hangs: 0  maxT=81

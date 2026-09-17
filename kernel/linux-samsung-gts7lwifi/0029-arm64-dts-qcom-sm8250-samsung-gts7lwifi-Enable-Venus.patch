@@ -1,0 +1,31 @@
+From 2daea9aa6b1e032688de9ec943dcd8541df8543e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ege=20Co=C5=9Fkun?= <randward@proton.me>
+Date: Mon, 14 Sep 2026 03:49:26 +0300
+Subject: [PATCH 29/33] arm64: dts: qcom: sm8250-samsung-gts7lwifi: Enable
+ Venus
+
+The video memory region already follows the vendor layout. The firmware
+comes from the NON-HLOS partition.
+
+Assisted-by: Claude:claude-opus-5
+---
+ arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts b/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+index 0eca1980f..a54d36ea6 100644
+--- a/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
++++ b/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+@@ -995,3 +995,9 @@ &usb_1_hsphy {
+ 
+ 	status = "okay";
+ };
++
++&venus {
++	firmware-name = "qcom/sm8250/samsung/gts7lwifi/venus.mdt";
++
++	status = "okay";
++};
+-- 
+2.47.3
+

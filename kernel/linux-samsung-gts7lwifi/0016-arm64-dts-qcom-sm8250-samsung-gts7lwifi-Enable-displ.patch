@@ -1,0 +1,190 @@
+From 47cefbe458a10c1f761d756b9b7e39d65a2ccff6 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ege=20Co=C5=9Fkun?= <randward@proton.me>
+Date: Sun, 13 Sep 2026 07:56:33 +0300
+Subject: [PATCH 16/33] arm64: dts: qcom: sm8250-samsung-gts7lwifi: Enable
+ display
+
+Enable the display subsystem with both DSI links in C-PHY mode and the
+NT36523 panel. The panel supplies are GPIO controlled regulators.
+
+Assisted-by: Claude:claude-opus-5
+---
+ .../dts/qcom/sm8250-samsung-gts7lwifi.dts     | 134 +++++++++++++++++-
+ 1 file changed, 127 insertions(+), 7 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts b/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+index 42141988d..ee5e1fc35 100644
+--- a/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
++++ b/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+@@ -5,6 +5,7 @@
+ 
+ /dts-v1/;
+ 
++#include <dt-bindings/phy/phy.h>
+ #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
+ #include "sm8250.dtsi"
+ #include "pm8150.dtsi"
+@@ -67,13 +68,6 @@ framebuffer: framebuffer@9c000000 {
+ 				 <&dispcc DISP_CC_MDSS_PCLK0_CLK>,
+ 				 <&dispcc DISP_CC_MDSS_ESC0_CLK>;
+ 			power-domains = <&dispcc MDSS_GDSC>;
+-			panel = <&panel>;
+-
+-			/* Physical dimensions for simple-framebuffer */
+-			panel: dummy-panel {
+-				width-mm = <148>;
+-				height-mm = <236>;
+-			};
+ 		};
+ 	};
+ 
+@@ -99,6 +93,31 @@ memory@80000000 {
+ 		      <0x0 0xc0000000 0x1 0x40000000>;
+ 	};
+ 
++	lcd_buck: regulator-lcd-buck {
++		compatible = "regulator-fixed";
++		regulator-name = "lcd_buck";
++		gpio = <&tlmm 93 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++		regulator-boot-on;
++		startup-delay-us = <10000>;
++		off-on-delay-us = <10000>;
++		vin-supply = <&lcd_vdd>;
++
++		pinctrl-0 = <&lcd_buck_en>;
++		pinctrl-names = "default";
++	};
++
++	lcd_vdd: regulator-lcd-vdd {
++		compatible = "regulator-fixed";
++		regulator-name = "lcd_vdd";
++		gpio = <&tlmm 135 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++		regulator-boot-on;
++
++		pinctrl-0 = <&lcd_vdd_en>;
++		pinctrl-names = "default";
++	};
++
+ 	reserved-memory {
+ 		hyp_mem: memory@80000000 {
+ 			reg = <0x0 0x80000000 0x0 0x600000>;
+@@ -403,6 +422,86 @@ touchscreen@1 {
+ 	};
+ };
+ 
++&mdss {
++	status = "okay";
++};
++
++&mdss_dsi0 {
++	vdda-supply = <&vreg_l9a_1p2>;
++	qcom,dual-dsi-mode;
++	qcom,sync-dual-dsi;
++	qcom,master-dsi;
++
++	status = "okay";
++
++	panel@0 {
++		compatible = "samsung,gts7lwifi-csot-nt36523", "novatek,nt36523";
++		reg = <0>;
++
++		vddio-supply = <&lcd_buck>;
++		reset-gpios = <&tlmm 82 GPIO_ACTIVE_LOW>;
++
++		pinctrl-0 = <&panel_reset>;
++		pinctrl-names = "default";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++
++				panel_in_0: endpoint {
++					remote-endpoint = <&mdss_dsi0_out>;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++
++				panel_in_1: endpoint {
++					remote-endpoint = <&mdss_dsi1_out>;
++				};
++			};
++		};
++	};
++};
++
++&mdss_dsi0_out {
++	data-lanes = <0 1 2>;
++	remote-endpoint = <&panel_in_0>;
++};
++
++&mdss_dsi0_phy {
++	vdds-supply = <&vreg_l5a_0p88>;
++	phy-type = <PHY_TYPE_CPHY>;
++
++	status = "okay";
++};
++
++&mdss_dsi1 {
++	vdda-supply = <&vreg_l9a_1p2>;
++	qcom,dual-dsi-mode;
++	qcom,sync-dual-dsi;
++	/* DSI1 is the slave, so it uses the DSI0 PLL */
++	assigned-clock-parents = <&mdss_dsi0_phy DSI_BYTE_PLL_CLK>,
++				 <&mdss_dsi0_phy DSI_PIXEL_PLL_CLK>;
++
++	status = "okay";
++};
++
++&mdss_dsi1_out {
++	data-lanes = <0 1 2>;
++	remote-endpoint = <&panel_in_1>;
++};
++
++&mdss_dsi1_phy {
++	vdds-supply = <&vreg_l5a_0p88>;
++	phy-type = <PHY_TYPE_CPHY>;
++
++	status = "okay";
++};
++
+ &pm8150l_gpios {
+ 	chg_int_default: chg-int-default-state {
+ 		pins = "gpio11";
+@@ -475,6 +574,27 @@ data-pins {
+ 		};
+ 	};
+ 
++	lcd_buck_en: lcd-buck-en-state {
++		pins = "gpio93";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	lcd_vdd_en: lcd-vdd-en-state {
++		pins = "gpio135";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	panel_reset: panel-reset-state {
++		pins = "gpio82";
++		function = "gpio";
++		drive-strength = <8>;
++		bias-disable;
++	};
++
+ 	sdc2_card_det_n: sd-card-det-n-state {
+ 		pins = "gpio77";
+ 		function = "gpio";
+-- 
+2.47.3
+

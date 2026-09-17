@@ -1,0 +1,12 @@
+d22d796aa32529652e86e1b54e085c1da2c5ba53e1b76539bb143ad5a539c912  step48-opp-C-670nom.img
+rebooting
+freqs: 305000000 400000000 441600000 490000000 525000000 587000000 670000000
+init_errors: 0
+glamor=yes
+run1 cur=670 score=2112 T=68
+run2 cur=670 score=2111 T=71
+run3 cur=670 score=2108 T=73
+run4 cur=670 score=2107 T=75
+run5 cur=670 score=2108 T=73
+run6 cur=670 score=2110 T=73
+hangs: 0  maxT=75

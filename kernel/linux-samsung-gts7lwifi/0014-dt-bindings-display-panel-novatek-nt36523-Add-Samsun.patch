@@ -1,0 +1,28 @@
+From c60cf07918340a654da50fcc1f7540d32a6ebc00 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ege=20Co=C5=9Fkun?= <randward@proton.me>
+Date: Sun, 13 Sep 2026 07:56:33 +0300
+Subject: [PATCH 14/33] dt-bindings: display: panel: novatek,nt36523: Add
+ Samsung Galaxy Tab S7 CSOT panel
+
+Add the CSOT panel of the Samsung Galaxy Tab S7 Wi-Fi.
+
+Assisted-by: Claude:claude-opus-5
+---
+ .../devicetree/bindings/display/panel/novatek,nt36523.yaml       | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/display/panel/novatek,nt36523.yaml b/Documentation/devicetree/bindings/display/panel/novatek,nt36523.yaml
+index b9300a1f2..4aceebb5e 100644
+--- a/Documentation/devicetree/bindings/display/panel/novatek,nt36523.yaml
++++ b/Documentation/devicetree/bindings/display/panel/novatek,nt36523.yaml
+@@ -19,6 +19,7 @@ properties:
+     oneOf:
+       - items:
+           - enum:
++              - samsung,gts7lwifi-csot-nt36523
+               - xiaomi,elish-boe-nt36523
+               - xiaomi,elish-csot-nt36523
+           - const: novatek,nt36523
+-- 
+2.47.3
+

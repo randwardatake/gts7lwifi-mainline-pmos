@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gts7 — Güvenlik & Tweak Rehberi</title>
+<style>
+  :root{--bg:#0e1116;--card:#171c24;--card2:#1e2530;--fg:#e6edf3;--mut:#9aa7b4;--acc:#4aa8ff;--warn:#ff5d5d;--ok:#39d98a;--code:#0b0e13;--bd:#2a323d}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,"Noto Sans",sans-serif;padding:0 0 60px}
+  header{background:linear-gradient(135deg,#132033,#0e1116);padding:28px 20px;border-bottom:1px solid var(--bd)}
+  .wrap{max-width:900px;margin:0 auto;padding:0 18px}
+  h1{margin:0 0 6px;font-size:26px}
+  h2{margin:34px 0 12px;font-size:21px;border-left:4px solid var(--acc);padding-left:10px}
+  h3{margin:20px 0 6px;font-size:17px;color:var(--acc)}
+  .sub{color:var(--mut);margin:0}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px 18px;margin:14px 0}
+  .warn{background:#2a1414;border:1px solid var(--warn);border-radius:12px;padding:16px 18px;margin:16px 0}
+  .warn b{color:var(--warn)}
+  .ok{color:var(--ok)}.bad{color:var(--warn)}.mut{color:var(--mut)}
+  code{background:var(--code);border:1px solid var(--bd);border-radius:6px;padding:1px 6px;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:14px}
+  pre{background:var(--code);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;overflow:auto;font-family:ui-monospace,monospace;font-size:13.5px}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:14.5px}
+  th,td{border:1px solid var(--bd);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--card2)}
+  .pill{display:inline-block;background:var(--card2);border:1px solid var(--bd);border-radius:20px;padding:2px 10px;font-size:12.5px;margin:2px 4px 2px 0}
+  a{color:var(--acc)}
+  .toc a{display:inline-block;margin:3px 10px 3px 0}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>🛡️ gts7 — Güvenlik & Tweak Rehberi</h1>
+  <p class="sub">Samsung Galaxy Tab S7 · postmarketOS + XFCE · mainline kernel 7.2.0</p>
+</div></header>
+
+<div class="wrap">
+
+<div class="warn">
+  <b>⚠️ YASAL UYARI — MUTLAKA OKU</b><br>
+  Buradaki araçlar <b>yalnızca kendi ağında</b> veya <b>yazılı iznin olan</b> sistemlerde,
+  öğrenme ve yetkili test amacıyla kullanılmalıdır. Başkasının ağına/cihazına izinsiz
+  müdahale (trafik dinleme, MITM, deauth, şifre kırma denemesi) <b>çoğu ülkede suçtur</b>
+  ve ciddi cezaları vardır. Sorumluluk tamamen sana aittir.
+</div>
+
+<div class="card toc">
+  <b>İçindekiler:</b><br>
+  <a href="#duzeltmeler">✔ Neyi düzelttik</a>
+  <a href="#youtube">📺 YouTube akıcılığı</a>
+  <a href="#perf">⚡ Performans / Overclock</a>
+  <a href="#tools">🧰 Güvenlik araçları</a>
+  <a href="#donanim">🔧 Donanım gerçekleri (deauth?)</a>
+  <a href="#geri">↩ Geri alma</a>
+</div>
+
+<h2 id="duzeltmeler">✔ Bu oturumda neyi düzelttik</h2>
+<div class="card">
+<table>
+<tr><th>Sorun</th><th>Kök neden</th><th>Yapılan</th></tr>
+<tr><td>Ekran yırtılması (tearing)</td><td>xfwm4 birleştirici açık ama <code>vblank_mode=xpresent</code> — freedreno'da yırtılan kombinasyon</td><td class="ok">vblank_mode → <b>glx</b> yapıldı, birleştirici canlı yenilendi</td></tr>
+<tr><td>YouTube takılması</td><td>Venus donanım video çözücü var ama tarayıcı kullanamıyor → VP9/AV1 <b>yazılımla</b> çözülüyor</td><td class="ok">Chromium GPU flag'leri + <b>h264ify</b> (H.264 zorlama) eklendi</td></tr>
+<tr><td>Performans/overclock</td><td>—</td><td class="ok">GPU zaten en yüksek <b>stabil</b> hızda (670 MHz); Performans Modu kısayolu eklendi</td></tr>
+</table>
+<p class="mut">Yırtılma <code>glx</code> ile geçmezse masaüstünde Ayarlar → Pencere Yöneticisi Ayarları (Tweaks) → Compositor,
+veya terminalde: <code>xfconf-query -c xfwm4 -p /general/vblank_mode -s auto</code> (sonra <code>xfwm4 --replace &amp;</code>).</p>
+</div>
+
+<h2 id="youtube">📺 YouTube nasıl akıcı olur</h2>
+<div class="card">
+<p>Bu tablette Adreno GPU <b>video çözmez</b>; Venus donanım çözücüsüne de tarayıcı erişemiyor.
+Bu yüzden hedef: <b>CPU'nun yükünü azaltmak.</b></p>
+<h3>1) h264ify (kuruldu)</h3>
+<p>YouTube'u ağır VP9/AV1 yerine hafif <b>H.264</b>'e zorlar. Chromium'da otomatik yüklenir.
+İkonuna tıklayıp <b>"Block 60fps"</b> ve <b>maksimum 720p</b> seçeneklerini açman şiddetle önerilir.</p>
+<h3>2) Kalite</h3>
+<p>Kontrol için: video → dişli → <b>720p</b>. Doğrulama: videoya sağ tık → <b>"Stats for nerds"</b> →
+<code>codecs</code> satırında <b>avc1</b> (H.264) görmelisin (vp09 değil).</p>
+<h3>3) En akıcı yol (opsiyonel — istersen sonra kurarız)</h3>
+<p>Gerçekten akıcı 1080p için Venus donanım çözücüsünü <b>mpv/FreeTube</b> kullanabilir
+(cihazda mpv zaten <code>v4l2m2m</code> destekliyor). Tek komutla:</p>
+<pre>sudo apk add mpv yt-dlp
+mpv --hwdec=v4l2m2m-copy "https://youtu.be/VIDEO_ID"     # donanim hizlandirmali
+# veya FreeTube:  sudo apk add freetube</pre>
+<p class="mut">Şimdilik "sadece tarayıcı" dedin; fikrin değişirse bu yol hazır.</p>
+</div>
+
+<h2 id="perf">⚡ Performans / Overclock durumu</h2>
+<div class="card">
+<h3>GPU (Adreno 650) — zaten stabil tavanda</h3>
+<table>
+<tr><th>Profil</th><th>Durum</th><th>Not</th></tr>
+<tr><td>587 MHz (stok)</td><td>—</td><td>Normal taban</td></tr>
+<tr><td><b>670 MHz</b></td><td class="ok">STABİL ✔ (şu an aktif)</td><td>~72–75°C, sağlam. <b>Önerilen.</b></td></tr>
+<tr><td>680 MHz</td><td class="mut">Stabil ama sıcak</td><td>Yük altında 670'e düşüyor, 83–85°C, kazanç ~%1.3. Değmez.</td></tr>
+<tr><td>690 / 700 MHz</td><td class="bad">BOZUK ✘</td><td>GPU başlatma hataları, donanım hızlandırma kapanıyor (glamor=no)</td></tr>
+</table>
+<p><b>Sonuç:</b> Çalışan kernel #24 GPU'yu zaten <b>670 MHz</b>'de (stok turbo tavanı) tutuyor.
+Daha yükseği ya bozuk ya da çok az kazanç için çok fazla ısı. <b>Kernel'i yeniden derlemeye gerek yok.</b></p>
+
+<h3>CPU — zaten tam silikon tavanında</h3>
+<p class="pill">küçük çekirdek: 1.8 GHz</p><p class="pill">büyük: 2.42 GHz</p><p class="pill">prime (X1): 3.09 GHz</p>
+<p>Hepsi zaten açık. Bunun üstü güvenli değil. "Overclock" burada = bu hızları
+<b>sabitlemek</b> (performans profili) demek.</p>
+
+<h3>Performans Modu (kısayol eklendi)</h3>
+<p>Masaüstünde <b>"Performans Modu"</b> → <b>AÇ</b>: CPU governor <code>performance</code> +
+GPU <code>performance</code> (klokları sabitler). <b>KAPA</b>: <code>schedutil</code>
+(varsayılan, pil dostu). Terminalden de:</p>
+<pre>perfmode.sh on      # performans (sicaklik/pil artar)
+perfmode.sh off     # varsayilan (pil dostu)
+perfmode.sh status  # anlik klok + sicaklik</pre>
+<h3>Benchmark sonucu (bu cihazda ölçüldü)</h3>
+<table>
+<tr><th>Mod</th><th>CPU (sysbench olay/sn)</th><th>Maks. sıcaklık</th><th>Prime klok</th></tr>
+<tr><td>schedutil (varsayılan)</td><td class="ok">5587</td><td class="ok">61 °C</td><td>ihtiyaçta 3.09 GHz</td></tr>
+<tr><td>performance</td><td>5518</td><td class="bad">67 °C</td><td>sabit 3.09 GHz</td></tr>
+</table>
+<p><b>Yorum:</b> Tam yük altında <code>schedutil</code> zaten tüm çekirdekleri maks. hıza çıkarıyor —
+bu yüzden CPU skoru <b>eşit</b> (fark gürültü seviyesinde), ama performans modu <b>daha sıcak</b>.
+Performans modunun asıl faydası: GPU'yu 670 MHz'de <b>sabit tutmak</b> (oyunlarda kare tutarlılığı)
+ve ani/gecikmeye duyarlı işlerde ramp gecikmesini yok etmek.</p>
+<p class="mut">➜ Öneri: Günlük kullanımda <b>KAPALI</b> bırak (pil + serinlik). Oyun/emülasyon öncesi <b>AÇ</b>.</p>
+</div>
+
+<h2 id="tools">🧰 Güvenlik araçları (kuruldu)</h2>
+<p class="mut">Hepsi dahili donanımla, kernel'e dokunmadan çalışır. Masaüstünde kısayolları var.</p>
+
+<div class="card">
+<h3>Ağ keşif / tarama</h3>
+<pre>nmap -sn 192.168.1.0/24              # canli host tara (ping sweep)
+sudo nmap -sS -sV 192.168.1.10       # port + servis surumu
+sudo arp-scan --localnet             # yerel agdaki cihazlar (MAC)
+sudo masscan 192.168.1.0/24 -p1-1000 --rate 1000</pre>
+
+<h3>Trafik analizi</h3>
+<pre>sudo tcpdump -i wlan0 -n port 80 or port 443
+sudo tshark -i wlan0 -Y "http.request"     # terminalde
+wireshark                                   # GUI (masaustu kisayolu)</pre>
+<p class="mut">⚠ Wireshark ile <b>root'suz</b> yakalama için: bir kez <b>çıkış yapıp tekrar giriş</b> yap
+(wireshark grubu üyeliğin aktifleşsin). İzinler zaten ayarlandı (dumpcap cap_net_raw).</p>
+
+<h3>LAN MITM — bettercap / ettercap</h3>
+<pre>sudo bettercap -iface wlan0
+  » net.probe on            # agdaki cihazlari bul
+  » set arp.spoof.targets 192.168.1.10
+  » arp.spoof on; net.sniff on
+sudo ettercap -T -i wlan0 -M arp /// ///   # metin modu ARP MITM</pre>
+
+<h3>Bluetooth / BLE</h3>
+<pre>bluetoothctl                     # scan on   → cevredeki cihazlar
+sudo hcitool lescan              # BLE tarama
+sudo bettercap -eval "ble.recon on; sleep 20; ble.show"</pre>
+
+<h3>WiFi izleme (pasif)</h3>
+<pre>wavemon                          # sinyal/kanal (GUI-benzeri, terminal)
+iw dev wlan0 scan | grep SSID    # cevredeki aglar</pre>
+
+<h3>Şifre / hash (offline)</h3>
+<pre>hashcat -I                       # cihaz/backend testi
+hashcat -m 22000 handshake.hc22000 wordlist.txt   # WPA (yakalanmis handshake)
+john --wordlist=rockyou.txt hashes.txt
+hydra -l admin -P wordlist.txt 192.168.1.1 ssh    # SADECE kendi cihazinda</pre>
+
+<h3>Yardımcı</h3>
+<pre>sudo macchanger -r wlan0         # rastgele MAC (once: ip link set wlan0 down)
+sudo nft list ruleset            # guvenlik duvari kurallari</pre>
+</div>
+
+<h2 id="donanim">🔧 Donanım gerçekleri — "deauth / Flipper Zero" olur mu?</h2>
+<div class="card">
+<p><b>Kısa cevap: Bu tablet bir Flipper Zero değil, ama güçlü bir ağ/Bluetooth pentest cihazı.</b></p>
+<table>
+<tr><th>Özellik</th><th>Durum</th></tr>
+<tr><td>WiFi <b>deauth</b> / paket enjeksiyonu</td><td class="bad">Dahili çip (ath11k) <b>yapamaz</b> — enjeksiyon desteği yok</td></tr>
+<tr><td>WiFi monitor/sniff (dahili)</td><td class="mut">Sınırlı/güvenilmez (ath11k)</td></tr>
+<tr><td>LAN saldırıları (MITM, ARP, tarama)</td><td class="ok">Tam çalışır (managed mod yeterli)</td></tr>
+<tr><td>Bluetooth / BLE keşif</td><td class="ok">Çalışır (hci0)</td></tr>
+<tr><td>SubGHz (433/868 MHz), NFC, Kızılötesi (IR)</td><td class="bad">Donanım yok — mümkün değil</td></tr>
+</table>
+<h3>Gerçek deauth istersen (gelecekte)</h3>
+<p>Enjeksiyon destekli bir <b>harici USB WiFi adaptörü</b> + kernel'e sürücü eklemek gerekir:</p>
+<ul>
+<li><b>Atheros AR9271</b> (<code>ath9k_htc</code>) — enjeksiyonda altın standart, tam mainline. <b>Önerilen.</b></li>
+<li>MediaTek MT7612U (<code>mt76x2u</code>) veya Realtek RTL8812AU.</li>
+</ul>
+<p>Bu kernel'de bu sürücüler <b>kapalı</b> (<code>CONFIG_ATH9K_HTC</code> vb. set değil).
+Adaptörü alırsan kernel'i yeniden derleyip (pmbootstrap ile) bu sürücüleri + <code>aircrack-ng</code>,
+<code>mdk4</code>, <code>hcxdumptool</code>'u ekleriz. O zaman deauth/handshake/PMKID tam çalışır.</p>
+<p class="mut">Not: Kernel yeniden derleme + flash mevcut çalışan sisteme küçük risk taşır; o yüzden şimdilik yapmadık.</p>
+</div>
+
+<h2 id="geri">↩ Geri alma (bir şey ters giderse)</h2>
+<div class="card">
+<pre># Ekran yirtilma ayarini geri al:
+xfconf-query -c xfwm4 -p /general/vblank_mode -s xpresent &amp;&amp; xfwm4 --replace &amp;
+
+# Chromium ayarlarini geri al:
+sudo cp /etc/chromium/chromium.conf.bak /etc/chromium/chromium.conf
+sudo rm /etc/chromium/policies/managed/h264ify.json
+
+# Guvenlik araclarini kaldir:
+sudo apk del nmap arp-scan masscan wavemon wireshark tshark tcpdump \
+  bettercap ettercap bluez bluez-deprecated hashcat john hydra macchanger
+
+# Performans modu her zaman KAPA:
+perfmode.sh off</pre>
+<p class="mut">Kernel/boot hiç değiştirilmedi — sistem bozulma riski yok.</p>
+</div>
+
+<p class="mut" style="text-align:center;margin-top:30px">gts7lwifi · postmarketOS · Bu rehber cihazında lokal olarak duruyor.</p>
+</div>
+</body>
+</html>

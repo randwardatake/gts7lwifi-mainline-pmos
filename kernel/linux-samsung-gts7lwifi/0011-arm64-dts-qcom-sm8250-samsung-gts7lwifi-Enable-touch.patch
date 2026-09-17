@@ -1,0 +1,121 @@
+From f453fa63b6925e2db0339b7ff40d535d0ea38e6e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ege=20Co=C5=9Fkun?= <randward@proton.me>
+Date: Sun, 13 Sep 2026 06:04:59 +0300
+Subject: [PATCH 11/33] arm64: dts: qcom: sm8250-samsung-gts7lwifi: Enable
+ touchscreen and battery
+
+Enable the GPI DMA controller and I2C5 for the Novatek NT36523
+touchscreen, and the MAX77705 charger and fuel gauge on I2C0.
+
+Assisted-by: Claude:claude-opus-5
+---
+ .../dts/qcom/sm8250-samsung-gts7lwifi.dts     | 72 +++++++++++++++++++
+ 1 file changed, 72 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts b/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+index 68b1c5691..b68a10964 100644
+--- a/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
++++ b/arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts
+@@ -35,6 +35,16 @@ / {
+ 	compatible = "samsung,gts7lwifi", "qcom,sm8250";
+ 	chassis-type = "tablet";
+ 
++	battery: battery {
++		compatible = "simple-battery";
++		constant-charge-current-max-microamp = <2100000>;
++		charge-full-design-microamp-hours = <8000000>;
++
++		over-voltage-threshold-microvolt = <4500000>;
++		voltage-min-design-microvolt = <3400000>;
++		voltage-max-design-microvolt = <4380000>;
++	};
++
+ 	chosen {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+@@ -321,13 +331,68 @@ vreg_l9c_2p9: ldo9 {
+ 	};
+ };
+ 
++&gpi_dma0 {
++	qcom,gpi-ee-offset = <0x1000>;
++
++	status = "okay";
++};
++
+ &i2c0 {
+ 	clock-frequency = <100000>;
+ 
+ 	status = "okay";
++
++	max77705: pmic@66 {
++		compatible = "maxim,max77705";
++		reg = <0x66>;
++		interrupts-extended = <&pm8150l_gpios 11 IRQ_TYPE_LEVEL_LOW>;
++		#interrupt-cells = <1>;
++		interrupt-controller;
++
++		pinctrl-0 = <&chg_int_default>;
++		pinctrl-names = "default";
++	};
++
++	max77705_charger: charger@69 {
++		compatible = "maxim,max77705-charger";
++		reg = <0x69>;
++		interrupts-extended = <&max77705 0>;
++		monitored-battery = <&battery>;
++	};
++
++	fuel-gauge@36 {
++		compatible = "maxim,max77705-battery";
++		reg = <0x36>;
++		interrupts-extended = <&max77705 2>;
++		power-supplies = <&max77705_charger>;
++		maxim,rsns-microohm = <5000>;
++	};
++};
++
++&i2c5 {
++	clock-frequency = <400000>;
++
++	status = "okay";
++
++	touchscreen@1 {
++		compatible = "novatek,nt36523-ts";
++		reg = <0x01>;
++		interrupts-extended = <&tlmm 15 IRQ_TYPE_EDGE_FALLING>;
++
++		pinctrl-0 = <&ts_int_default>;
++		pinctrl-names = "default";
++	};
+ };
+ 
+ &pm8150l_gpios {
++	chg_int_default: chg-int-default-state {
++		pins = "gpio11";
++		function = "normal";
++		power-source = <1>;
++		input-enable;
++		bias-pull-up;
++	};
++
+ 	vol_up_n: vol-up-n-state {
+ 		pins = "gpio3";
+ 		function = "normal";
+@@ -397,6 +462,13 @@ sdc2_card_det_n: sd-card-det-n-state {
+ 		drive-strength = <2>;
+ 		bias-disable;
+ 	};
++
++	ts_int_default: ts-int-default-state {
++		pins = "gpio15";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
+ };
+ 
+ &ufs_mem_hc {
+-- 
+2.47.3
+

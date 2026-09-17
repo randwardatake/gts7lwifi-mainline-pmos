@@ -1,0 +1,8 @@
+305000000 400000000 441600000 490000000 525000000 587000000 670000000 680000000
+0
+r1 Score: 1590 cur=680 cool=0 gpuT=84
+r2 Score: 1584 cur=670 cool=1 gpuT=85
+r3 Score: 1577 cur=670 cool=1 gpuT=84
+r4 Score: 1581 cur=680 cool=0 gpuT=83
+r5 Score: 1591 cur=680 cool=0 gpuT=83
+r6 Score: 1590 cur=670 cool=1 gpuT=85

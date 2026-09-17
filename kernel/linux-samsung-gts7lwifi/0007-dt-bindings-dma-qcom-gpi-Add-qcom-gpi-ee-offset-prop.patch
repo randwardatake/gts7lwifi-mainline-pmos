@@ -1,0 +1,35 @@
+From 297529292ab152749afe1dd54039b503dd66a636 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ege=20Co=C5=9Fkun?= <randward@proton.me>
+Date: Sun, 13 Sep 2026 06:04:59 +0300
+Subject: [PATCH 07/33] dt-bindings: dma: qcom,gpi: Add qcom,gpi-ee-offset
+ property
+
+Some firmware variants, such as the one on the Samsung Galaxy Tab S7,
+place the GPI execution environment registers at a different offset
+than the SoC default. Allow describing it in the devicetree.
+
+Assisted-by: Claude:claude-opus-5
+---
+ Documentation/devicetree/bindings/dma/qcom,gpi.yaml | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/dma/qcom,gpi.yaml b/Documentation/devicetree/bindings/dma/qcom,gpi.yaml
+index 54dca6232..79b13c530 100644
+--- a/Documentation/devicetree/bindings/dma/qcom,gpi.yaml
++++ b/Documentation/devicetree/bindings/dma/qcom,gpi.yaml
+@@ -86,6 +86,12 @@ properties:
+ 
+   dma-coherent: true
+ 
++  qcom,gpi-ee-offset:
++    $ref: /schemas/types.yaml#/definitions/uint32
++    description:
++      Offset of the execution environment register space from the start of
++      the controller, when it differs from the SoC default.
++
+ required:
+   - compatible
+   - reg
+-- 
+2.47.3
+

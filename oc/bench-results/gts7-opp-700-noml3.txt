@@ -1,0 +1,6 @@
+Lexical error: arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dts:812.16-43 Unexpected 'RPMH_REGULATOR_LEVEL_NOM_L3'
+FATAL ERROR: Syntax error parsing input tree
+make[3]: *** [scripts/Makefile.dtbs:140: arch/arm64/boot/dts/qcom/sm8250-samsung-gts7lwifi.dtb] Error 1
+make[2]: *** [scripts/Makefile.build:549: arch/arm64/boot/dts/qcom] Error 2
+make[1]: *** [/home/randward/linux-sm8250/Makefile:1625: qcom/sm8250-samsung-gts7lwifi.dtb] Error 2
+make: *** [Makefile:248: __sub-make] Error 2

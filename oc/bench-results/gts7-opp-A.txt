@@ -1,0 +1,12 @@
+f6a71644534814d9be8231a7fecfb296f4387859e7834e8742342e7489e41afd  step43-opp-A-650top.img
+rebooting
+freqs: 305000000 400000000 441600000 490000000 525000000 587000000 650000000
+init_errors: 0
+glamor=yes
+run1 cur=650 score=2054 T=68
+run2 cur=650 score=2049 T=72
+run3 cur=650 score=2042 T=75
+run4 cur=650 score=2049 T=74
+run5 cur=650 score=2048 T=74
+run6 cur=650 score=2047 T=73
+hangs: 0  maxT=75
